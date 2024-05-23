@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
+using System.Printing;
 using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -29,10 +30,36 @@ namespace ChessGame
 
         public abstract bool legalMove(Board board, Spot start, Spot end);
 
+        public enum PieceType
+        {
+            Pawn,
+            Knight,
+            Bishop,
+            Queen,
+            Rook,
+            King
+        }
+
+        public enum Direction
+        {
+            North,
+            South, 
+            East,
+            West,
+            Northeast,
+            Northwest,
+            Southeast,
+            Southwest
+        }
+
+        public PieceType type { get; set; }
+
         public class King : Piece
         {
             public bool castling = false;
-            public King(bool white) : base(white) { }
+            public King(bool white) : base(white) {
+                this.type = PieceType.King;
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
@@ -45,11 +72,62 @@ namespace ChessGame
 
                 int x = Math.Abs(start.getX() - end.getX());
                 int y = Math.Abs(start.getY() - end.getY());
-                if (x + y == 1)
+                if ((x + y == 1) || (x * y == 1))
                 {
                     return true;
                 }
                 return false;
+            }
+        
+            public bool isKingInCheck(Board board, Spot kingSpot)
+            {
+                return false;
+            }
+
+            private bool isThreatInDirection(Board board, Spot start, Direction direction)
+            {
+                int x = start.getX();
+                int y = start.getY();
+
+                while (true)
+                {
+                    switch (direction)
+                    {
+                        case Direction.North: x--; break;
+                        case Direction.South: x++; break;
+                        case Direction.East: x++; break;
+                        case Direction.West: x--; break;
+                        case Direction.Northeast: x--; y++; break;
+                        case Direction.Northwest: x--; y--; break;
+                        case Direction.Southeast: x++; y++; break;
+                        case Direction.Southwest: x++; y--; break;
+                    }
+
+                    if(x >= 8 || x < 0 || y >= 8 || y < 0) {  return false; } //out of bounds of the board
+
+                    Spot spot = board.getSpot(x, y);
+                    Piece piece = spot.GetPiece();
+                    if(spot == null)
+                    {
+                        continue;
+                    }
+
+                    if (spot.GetPiece().isWhite())
+                    {
+                        return false; //friendly white piece 
+                    }
+
+                    if((direction == Direction.North || direction == Direction.South ||
+                        direction == Direction.East || direction == Direction.West) &&
+                        piece.type == PieceType.Rook || piece.type == PieceType.Queen)
+                    {
+                        return true;//threat detected in a straight line
+                    }
+
+                    if ((direction == Direction.North || direction == Direction.South ||
+                    direction == Direction.East || direction == Direction.West) &&
+                    piece.type == PieceType.Bishop || piece.type == PieceType.Queen)
+                }
             }
         }
 
@@ -148,7 +226,7 @@ namespace ChessGame
 
                     else if (x > 0)
                     {
-                        for (int i = start.getX() - 1; i > start.getX() + 1; i--)
+                        for (int i = start.getX() - 1; i > end.getX() + 1; i--)
                         {
                             if (board.getSpot(i, start.getY()).GetPiece() != null)
                             {
