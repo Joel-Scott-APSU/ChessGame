@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media.Media3D;
@@ -10,10 +11,15 @@ namespace ChessGame
     internal class Board
     {
         private bool[,] threatMap;
-        Spot[][] boxes = new Spot[8][];
+        private Spot[][] boxes = new Spot[8][];
+        private Player whitePlayer;
+        private Player blackPlayer;
 
         public Board()
         {
+            whitePlayer = new Player(true);
+            blackPlayer = new Player(false);
+
             for (int i = 0; i < 8; i++)
             {
                 boxes[i] = new Spot[8];
@@ -229,7 +235,33 @@ namespace ChessGame
             }
         }
 
+        public bool inKingInCheck(bool isWhite)
+        {
+            Spot Kingspot = findKing(isWhite);
 
+            List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
+            updateThreatMap(opponentPieces);
+
+            return threatMap[Kingspot.getX(), Kingspot.getY()];
+        }
+
+        private Spot findKing(bool isWhite)
+        {
+            Player player = isWhite ? whitePlayer : blackPlayer;
+
+            foreach (Spot[] row in boxes)
+            {
+                foreach (Spot spot in row)
+                {
+                    if(spot !=  null && spot.GetPiece() != null && spot.GetPiece().GetType() == typeof(Piece.King) && spot.GetPiece().isWhite() == isWhite)
+                    {
+                        return spot;
+                    }
+                }
+            }
+
+            return null;
+        }
         public Spot getSpot(int x, int y)
         {
             if(x < 0 || x > 7 || y < 0 || y > 7) {
@@ -241,44 +273,42 @@ namespace ChessGame
         public void resetBoard()
         {
             //initialize the white king on the board 
-            boxes[0][4] = new Spot(0, 4, new Piece.King(true));
+            createPieces(new Piece.King(true), 0, 4, whitePlayer);
             //initialize the white queen on the board 
-            boxes[0][3] = new Spot(0 , 3, new Piece.Queen(true));
-            //initialze the white rook on the board 
-            boxes[0][0] = new Spot(0, 0, new Piece.Rook(true));
-            //initialize the white knight on the board 
-            boxes[0][1] = new Spot(0, 1, new Piece.Knight(true));
-            //initialize the white bishop on the board 
-            boxes[0][2] = new Spot(0, 2, new Piece.Bishop(true));
+            createPieces(new Piece.Queen(true), 0, 3, whitePlayer);
+            //initialize the white rooks on the board 
+            createPieces(new Piece.Rook(true), 0, 0, whitePlayer);
+            createPieces(new Piece.Rook(true), 0, 7, whitePlayer);
+            //initialize the white knights on the board 
+            createPieces(new Piece.Knight(true), 0, 1, whitePlayer);
+            createPieces(new Piece.Knight(true), 0, 6, whitePlayer);
+            //initialize the white bishops on the board 
+            createPieces(new Piece.Bishop(true), 0, 2, whitePlayer);
+            createPieces(new Piece.Bishop(true), 0, 5, whitePlayer);
             //initialize all the white pawns 
-            boxes[1][0] = new Spot(1, 0, new Piece.Pawn(true));
-            boxes[1][1] = new Spot(1, 1, new Piece.Pawn(true));
-            boxes[1][2] = new Spot(1, 2, new Piece.Pawn(true));
-            boxes[1][3] = new Spot(1, 3, new Piece.Pawn(true));
-            boxes[1][4] = new Spot(1, 4, new Piece.Pawn(true));
-            boxes[1][5] = new Spot(1, 5, new Piece.Pawn(true));
-            boxes[1][6] = new Spot(1, 6, new Piece.Pawn(true));
-            boxes[1][7] = new Spot(1, 7, new Piece.Pawn(true));
+            for(int i = 0; i < 8; i++)
+            {
+                createPieces(new Piece.Pawn(true), 1, i, whitePlayer);
+            }
 
             //initialize the black king on the board
-            boxes[7][4] = new Spot(7, 4, new Piece.King(false));
+            createPieces(new Piece.King(false), 7, 4, blackPlayer);
             //initialize the black queen on the board 
-            boxes[7][3] = new Spot(7, 5, new Piece.Queen(false));
+            createPieces(new Piece.Queen(false), 7, 3, blackPlayer);
             //initialize the black rook on the board 
-            boxes[7][0] = new Spot(7, 0, new Piece.Rook(false));
-            //initilize the black Knight on the board
-            boxes[7][1] = new Spot(7,1, new Piece.Knight(false));
+            createPieces(new Piece.Rook(false), 7, 0, blackPlayer);
+            createPieces(new Piece.Rook(false), 7, 7, blackPlayer);
+            //initialize the black Knight on the board
+            createPieces(new Piece.Knight(false), 7, 1, blackPlayer);
+            createPieces(new Piece.Knight(false), 7, 6, blackPlayer);
             //initialize the black bishop on the board
-            boxes[7][2] = new Spot(7, 2, new Piece.Bishop(false));
+            createPieces(new Piece.Bishop(false), 7, 2, blackPlayer);
+            createPieces(new Piece.Bishop(false), 7, 5, blackPlayer);
             //initialize the black pawns on the board 
-            boxes[6][0] = new Spot(6, 0, new Piece.Pawn(false));
-            boxes[6][1] = new Spot(6, 1, new Piece.Pawn(false));
-            boxes[6][2] = new Spot(6, 2, new Piece.Pawn(false));
-            boxes[6][3] = new Spot(6, 3, new Piece.Pawn(false));
-            boxes[6][4] = new Spot(6, 4, new Piece.Pawn(false));
-            boxes[6][5] = new Spot(6, 5, new Piece.Pawn(false));
-            boxes[6][6] = new Spot(6, 6, new Piece.Pawn(false));
-            boxes[6][7] = new Spot(6, 7, new Piece.Pawn(false));
+            for(int i = 0; i < 8; i++)
+            {
+                createPieces(new Piece.Pawn(false), 6, i, blackPlayer);
+            }
 
             for(int i = 2; i < 6; i++)
             {
@@ -289,6 +319,12 @@ namespace ChessGame
             }
 
 
+        }
+
+        public void createPieces(Piece piece, int x, int y, Player player)
+        {
+            boxes[x][y] = new Spot(x, y, piece);
+            player.addPiece(piece);
         }
     }
 }

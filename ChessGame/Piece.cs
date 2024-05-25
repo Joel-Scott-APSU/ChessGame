@@ -104,6 +104,11 @@ namespace ChessGame
                     return false;
                 }
 
+                if (board.inKingInCheck(isWhite()))
+                {
+                    return false;
+                }
+
                 //if the piece moves in more than a single direction the move is not legal 
                 if(startX != end.getX() || startY != end.getY())
                 {
@@ -130,6 +135,8 @@ namespace ChessGame
 
                 return true;
             }
+            
+            //checks if making the move puts your own king in check 
 
         }
 
@@ -147,7 +154,7 @@ namespace ChessGame
                 }
 
 
-                return false;
+                return true;
             }
         }
 
@@ -158,7 +165,30 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                return false;
+                int startX = start.getX();
+                int startY = start.getY();
+                int endX = end.getX();
+                int endY = end.getY();
+
+                if (board.inKingInCheck(isWhite()))
+                {
+                    return false;
+                }
+
+                if(end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                {
+                    return false;
+                }
+
+                if(startX ==  endX || startY == endY)
+                {
+                    return false;
+                }
+
+                int movementDirectionX = Math.Sign(endX - startX);
+                int MovementDirectionY = Math.Sign(endY - startY);
+
+                return true;
             }
         }
 

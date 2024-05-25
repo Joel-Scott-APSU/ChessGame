@@ -8,5 +8,28 @@ namespace ChessGame
 {
     class Player
     {
+        private bool isWhite;
+        private List<Piece> pieces;
+
+        public Player(bool isWhite)
+        {
+            pieces = new List<Piece>();
+            this.isWhite = isWhite;
+        }
+
+        public void addPiece(Piece piece)
+        {
+            pieces.Add(piece);
+        }
+
+        public void removePiece(Piece piece)
+        {
+            pieces.Remove(piece);
+        }
+
+        public List<Piece> getPieces()
+        {
+            return pieces;
+        }
     }
 }
