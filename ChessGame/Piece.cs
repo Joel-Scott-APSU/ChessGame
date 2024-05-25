@@ -57,7 +57,8 @@ namespace ChessGame
         public class King : Piece
         {
             public bool castling = false;
-            public King(bool white) : base(white) {
+            public King(bool white) : base(white)
+            {
                 this.type = PieceType.King;
             }
 
@@ -65,69 +66,12 @@ namespace ChessGame
             public bool legalMove(Board board, Spot start, Spot end)
             {
                 //Check to see if the spot where we are trying to move to is already occupied by a piece of that color
-                if (end.GetPiece().isWhite() == this.isWhite())
+                if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
                     return false;
                 }
 
-                int x = Math.Abs(start.getX() - end.getX());
-                int y = Math.Abs(start.getY() - end.getY());
-                if ((x + y == 1) || (x * y == 1))
-                {
-                    return true;
-                }
-                return false;
-            }
-        
-            public bool isKingInCheck(Board board, Spot kingSpot)
-            {
-                return false;
-            }
-
-            private bool isThreatInDirection(Board board, Spot start, Direction direction)
-            {
-                int x = start.getX();
-                int y = start.getY();
-
-                while (true)
-                {
-                    switch (direction)
-                    {
-                        case Direction.North: x--; break;
-                        case Direction.South: x++; break;
-                        case Direction.East: x++; break;
-                        case Direction.West: x--; break;
-                        case Direction.Northeast: x--; y++; break;
-                        case Direction.Northwest: x--; y--; break;
-                        case Direction.Southeast: x++; y++; break;
-                        case Direction.Southwest: x++; y--; break;
-                    }
-
-                    if(x >= 8 || x < 0 || y >= 8 || y < 0) {  return false; } //out of bounds of the board
-
-                    Spot spot = board.getSpot(x, y);
-                    Piece piece = spot.GetPiece();
-                    if(spot == null)
-                    {
-                        continue;
-                    }
-
-                    if (spot.GetPiece().isWhite())
-                    {
-                        return false; //friendly white piece 
-                    }
-
-                    if((direction == Direction.North || direction == Direction.South ||
-                        direction == Direction.East || direction == Direction.West) &&
-                        piece.type == PieceType.Rook || piece.type == PieceType.Queen)
-                    {
-                        return true;//threat detected in a straight line
-                    }
-
-                    if ((direction == Direction.North || direction == Direction.South ||
-                    direction == Direction.East || direction == Direction.West) &&
-                    piece.type == PieceType.Bishop || piece.type == PieceType.Queen)
-                }
+                return true;
             }
         }
 
@@ -138,59 +82,7 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int x = end.getX() - start.getX();
-                int y = Math.Abs(end.getY() - start.getY());
-                int z = start.getX() - end.getX();
-                Spot adjacentLeft = board.getSpot(start.getX(), start.getY() - 1);
-                Spot adjacentRight = board.getSpot(start.getX(), start.getY() + 1);
-
-                //checks if the pawn is its starting position 
-                bool isStartingPosition = (this.isWhite() && start.getX() == 1) || (!this.isWhite() && start.getX() == 6);
-                //checks to see if the piece is white
-                if (isWhite())
-                {
-                    if (x == 0 && y == 0)
-                    {
-                        return false;
-                    }
-                    else if (end.getX() == 7)
-                    {
-
-                        return true;
-                    }
-                    //checks if the move the user is attempting to make is a valid move forward, barring the pawns first move  
-                    else if ((x == 1 || x == 2 && isStartingPosition) && y == 0 && end.GetPiece() == null)
-                    {
-                        return true;
-                    }
-                    //checks if the piece is able to capture another piece is a diagonal forward square 
-                    else if (x == 1 && y == 1 && end.GetPiece() != null && !end.GetPiece().isWhite())
-                    {
-                        return true;
-                    }
-                }
-
-                else if (!isWhite())
-                {
-                    if (x == 0 && y == 0)
-                    {
-                        return false;
-                    }
-                    else if (end.getX() == 0)
-                    {
-                        return true;
-                    }
-                    else if ((z == 1 || z == 2 && isStartingPosition) && y == 0 && end.GetPiece == null)
-                    {
-                        return true;
-                    }
-                    else if (z == 1 && y == 1 && end.GetPiece != null && end.GetPiece().isWhite())
-                    {
-                        return true;
-                    }
-                }
-
-                return false;
+                return true;
             }
         }
 
@@ -201,72 +93,42 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int x = start.getX() - end.getX();
-                int y = start.getY() - end.getY();
+                int startX = start.getX();
+                int startY = start.getY();
+                int endX = end.getX();
+                int endY = end.getY();
 
-                if (isWhite())
+                //spot is occupied by a piece of the same color 
+                if(end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
-                    if ((x == 0 && y == 0) || (x != 0 && y != 0))
+                    return false;
+                }
+
+                //if the piece moves in more than a single direction the move is not legal 
+                if(startX != end.getX() || startY != end.getY())
+                {
+                    return false;
+                }
+
+                int movementDirectionX = (endX - startX) == 0 ? 0 : (endX - startX) / Math.Abs(endX - startX);
+                int movementDirectionY = (endY - startY) == 0 ? 0 : (endY - startY) / Math.Abs(endY - startY);
+
+                int currentX = startX + movementDirectionX;
+                int currentY = startY + movementDirectionY;
+
+                while(currentX != endX && currentY != endY)
+                {
+                    if (board.getSpot(currentX, currentY) != null)
                     {
                         return false;
                     }
-                    else if (x < 0)
-                    {
-                        for (int i = start.getX() + 1; i < end.getX() - 1; i++)
-                        {
-                            if (board.getSpot(i, start.getY()).GetPiece() != null)
-                            {
-                                return false;
-                            }
-                        }
-                        //initialize function in move class to destroy piece at existing square when you move and call it here before returning true 
-                        //initialize function to check if moving piece puts own king in check
-                        return true;
-                    }
 
-                    else if (x > 0)
-                    {
-                        for (int i = start.getX() - 1; i > end.getX() + 1; i--)
-                        {
-                            if (board.getSpot(i, start.getY()).GetPiece() != null)
-                            {
-                                return false;
-                            }
-                        }
-                        //initialize function in move class to destroy piece at existing square when you move and call it here before returning true 
-                        //initialize function to check if moving piece puts own king in check
-                        return true;
-                    }
-
-                    else if (y < 0)
-                    {
-                        for (int i = start.getY() + 1; i < start.getY() - 1; i++)
-                        {
-                            if (board.getSpot(i, start.getX()).GetPiece() != null)
-                            {
-                                return false;
-                            }
-                        }
-                        //initialize function in move class to destroy piece at existing square when you move and call it here before returning true 
-                        //initialize function to check if moving piece puts own king in check
-                        return true;
-                    }
-
-                    else if (y > 0)
-                    {
-                        for (int i = start.getY() - 1; i > start.getY() + 1; i--)
-                        {
-                            if (board.getSpot(i, start.getX()).GetPiece() != null)
-                            {
-                                return false;
-                            }
-                        }
-                        //initialize function in move class to destroy piece at existing square when you move and call it here before returning true 
-                        //initialize function to check if moving piece puts own king in check
-                        return true;
-                    }
+                    currentX += movementDirectionX;
+                    currentY += movementDirectionY;
                 }
-                return false;
+
+
+                return true;
             }
 
         }
@@ -278,6 +140,13 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
+
+                if(end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                {
+                    return false;
+                }
+
+
                 return false;
             }
         }
