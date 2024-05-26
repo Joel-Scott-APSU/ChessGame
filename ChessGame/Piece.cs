@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Printing;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
@@ -109,21 +110,30 @@ namespace ChessGame
                     return false;
                 }
 
-                //if the piece moves in more than a single direction the move is not legal 
-                if(startX != end.getX() || startY != end.getY())
+                if(!legalRookMove(board, startX, startY, endX, endY))
                 {
                     return false;
                 }
 
+                return true;
+            }
+
+            public static bool legalRookMove(Board board, int startX, int startY, int endX, int endY)
+            {
                 int movementDirectionX = (endX - startX) == 0 ? 0 : (endX - startX) / Math.Abs(endX - startX);
                 int movementDirectionY = (endY - startY) == 0 ? 0 : (endY - startY) / Math.Abs(endY - startY);
+
+                if(movementDirectionX !=  0 && movementDirectionY != 0)
+                {
+                    return false;
+                }
 
                 int currentX = startX + movementDirectionX;
                 int currentY = startY + movementDirectionY;
 
-                while(currentX != endX && currentY != endY)
+                while (currentX != endX || currentY != endY)
                 {
-                    if (board.getSpot(currentX, currentY) != null)
+                    if (board.getSpot(currentX, currentY).GetPiece() != null)
                     {
                         return false;
                     }
@@ -132,11 +142,8 @@ namespace ChessGame
                     currentY += movementDirectionY;
                 }
 
-
                 return true;
             }
-            
-            //checks if making the move puts your own king in check 
 
         }
 
@@ -175,18 +182,41 @@ namespace ChessGame
                     return false;
                 }
 
-                if(end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
                     return false;
                 }
 
-                if(startX ==  endX || startY == endY)
+                if (startX == endX || startY == endY)
                 {
                     return false;
                 }
 
+                return true;
+            }
+            
+            public static bool legalBishopMove(Board board, int startX, int startY, int endX, int endY) { 
                 int movementDirectionX = Math.Sign(endX - startX);
                 int MovementDirectionY = Math.Sign(endY - startY);
+
+                if(Math.Abs(endX - startX) != Math.Abs(endY - startY))
+                {
+                    return false;
+                }
+
+                int currentX = startX + movementDirectionX;
+                int currentY = startY + MovementDirectionY;
+
+                while(currentX != endX && currentY != endY)
+                {
+                    if(board.getSpot(currentX, currentY).GetPiece() != null)
+                    {
+                        return false;
+                    }
+
+                    currentX += movementDirectionX;
+                    currentY += MovementDirectionY;
+                }
 
                 return true;
             }
@@ -199,8 +229,26 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                return false;
+                int startX = start.getX();
+                int startY = start.getY(); 
+                int endX = end.getX();
+                int endY = end.getY();
+
+                if (board.inKingInCheck(isWhite()))
+                {
+                    return false;
+                }
+
+                if(end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                {
+                    return false;
+                }
+
+
+                return true;
             }
+
+
         }
     }
 }
