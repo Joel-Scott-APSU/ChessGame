@@ -83,6 +83,8 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
+
+
                 return true;
             }
         }
@@ -244,6 +246,12 @@ namespace ChessGame
                     return false;
                 }
 
+                if(!Rook.legalRookMove(board, startX, startY, endX, endY) && !Bishop.legalBishopMove(board, startX, startY, endX, endY))
+                {
+                    return false;
+                }
+
+                
 
                 return true;
             }

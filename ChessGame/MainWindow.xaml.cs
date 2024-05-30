@@ -19,6 +19,16 @@ namespace ChessGame
         public MainWindow()
         {
             InitializeComponent();
+            double newWidth = this.Width * 0.75;
+            double newHeight = this.Height * 0.75;
+
+            // Set the new width and height for the window
+            this.Width = newWidth;
+            this.Height = newHeight;
+
+            DataContext = new MainWindowViewModel();
+
+
         }
     }
 }
