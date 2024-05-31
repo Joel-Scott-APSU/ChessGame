@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
@@ -9,10 +10,13 @@ using System.Windows.Shapes;
 
 namespace ChessGame
 {
-    public class MainWindowViewModel
+    public class MainWindowViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
         public ObservableCollection<ChessBoardSquare> ChessBoardSquares { get; set; }
-
+        public Board GameBoard { get; private set; }
+        private ChessBoardSquare selectedSquare;
+        private Game game;
         public MainWindowViewModel()
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
@@ -56,7 +60,44 @@ namespace ChessGame
                 // Flip the color for the next row
                 isWhite = !isWhite;
             }
-            Debug.WriteLine("ChessBoardSquares populated: " + ChessBoardSquares.Count);
+        }
+
+        private ImageSource getPieceImage(Piece piece)
+        {
+            if(piece == null)
+            {
+                return null;
+            }
+
+            string uri = $"pack://application:,,,/ChessPieces/{piece.type.ToString()}_{(piece.isWhite() ? "White" : "Black")}.png";
+
+            return new BitmapImage(new Uri(uri));
+        }
+
+        private void onSquareSelected(ChessBoardSquare square)
+        {
+            if(selectedSquare == null)
+            {
+                selectedSquare = square;
+            }
+
+            else
+            {
+                if (game.movePiece(game.selectedSquare, square)){
+                    updateUIForMove(game.selectedSquare, square);
+                }
+
+                game.selectedSquare = null;
+            }
+
+
+        }
+
+        private void updateUIForMove(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
+        {
+            toSquare.PieceImage = fromSquare.PieceImage;
+
+            fromSquare.PieceImage = null;
         }
 
     }

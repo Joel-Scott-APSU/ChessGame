@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChessGame
 {
-    internal class Spot
+    public class Spot
     {
         private int x;
         private int y;
@@ -27,7 +27,7 @@ namespace ChessGame
 
         public Piece GetPiece() { return piece; }
 
-        public void setPiece(Piece p) { this.piece = p; }
+        public void setPiece(Piece piece) { this.piece = piece; }
         
     }
 }

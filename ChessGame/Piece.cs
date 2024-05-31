@@ -11,7 +11,7 @@ using System.Windows.Navigation;
 
 namespace ChessGame
 {
-    internal abstract class Piece
+    public abstract class Piece
     {
         private bool taken = false;
         private bool white = false;
@@ -72,6 +72,11 @@ namespace ChessGame
                     return false;
                 }
 
+                if (!board.isKingInCheck(isWhite()))
+                {
+                    return false;
+                }
+
                 return true;
             }
         }
@@ -107,7 +112,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if (board.inKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
@@ -179,7 +184,7 @@ namespace ChessGame
                 int endX = end.getX();
                 int endY = end.getY();
 
-                if (board.inKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
@@ -190,6 +195,11 @@ namespace ChessGame
                 }
 
                 if (startX == endX || startY == endY)
+                {
+                    return false;
+                }
+
+                if(!legalBishopMove(board, startX, startY, endX, endY))
                 {
                     return false;
                 }
@@ -236,7 +246,7 @@ namespace ChessGame
                 int endX = end.getX();
                 int endY = end.getY();
 
-                if (board.inKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
@@ -249,9 +259,7 @@ namespace ChessGame
                 if(!Rook.legalRookMove(board, startX, startY, endX, endY) && !Bishop.legalBishopMove(board, startX, startY, endX, endY))
                 {
                     return false;
-                }
-
-                
+                }                
 
                 return true;
             }

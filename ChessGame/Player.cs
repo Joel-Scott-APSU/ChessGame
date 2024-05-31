@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ChessGame
 {
-    class Player
+    public class Player
     {
         private bool isWhite;
         private List<Piece> pieces;

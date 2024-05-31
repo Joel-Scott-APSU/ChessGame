@@ -8,7 +8,7 @@ using System.Windows.Media.Media3D;
 
 namespace ChessGame
 {
-    internal class Board
+    public class Board
     {
         private bool[,] threatMap;
         private Spot[][] boxes = new Spot[8][];
@@ -235,7 +235,7 @@ namespace ChessGame
             }
         }
 
-        public bool inKingInCheck(bool isWhite)
+        public bool isKingInCheck(bool isWhite)
         {
             Spot Kingspot = findKing(isWhite);
 
