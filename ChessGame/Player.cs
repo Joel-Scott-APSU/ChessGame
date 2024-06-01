@@ -26,7 +26,6 @@ namespace ChessGame
         {
             pieces.Remove(piece);
         }
-
         public List<Piece> getPieces()
         {
             return pieces;

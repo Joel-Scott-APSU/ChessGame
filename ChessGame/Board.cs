@@ -25,7 +25,7 @@ namespace ChessGame
                 boxes[i] = new Spot[8];
             }
 
-            threatMap = new bool[8,8];
+            threatMap = new bool[8, 8];
             //initializes the new board 
             this.resetBoard();
 
@@ -39,18 +39,18 @@ namespace ChessGame
 
             foreach (Piece piece in opponentPieces)
             {
-               MarkThreats(piece);
+                MarkThreats(piece);
             }
         }
 
         //clears the threat map so it can be reinitialized each turn 
         private void ClearThreatMap()
         {
-            for(int i = 0; i < 8;i++)
+            for (int i = 0; i < 8; i++)
             {
-                for(int j = 0; j < 8; j++)
+                for (int j = 0; j < 8; j++)
                 {
-                    threatMap[i,j] = false;
+                    threatMap[i, j] = false;
                 }
             }
         }
@@ -63,9 +63,9 @@ namespace ChessGame
             }
 
             Spot position = null;
-            for(int i = 0;i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
-                for(int j =0; j < 8; j++)
+                for (int j = 0; j < 8; j++)
                 {
                     if (boxes[i][j].GetPiece() == piece)
                     {
@@ -76,7 +76,7 @@ namespace ChessGame
                 if (position != null) break;
             }
 
-            if(position == null)
+            if (position == null)
             {
                 throw new InvalidOperationException("Piece not found on the board");
             }
@@ -84,24 +84,52 @@ namespace ChessGame
             int x = position.getX();
             int y = position.getY();
 
+            switch (piece.type)
+            {
+                case Piece.PieceType.Pawn:
+                    {
+                        markPawnThreats(piece, x, y);
+                        break;
+                    }
+                case Piece.PieceType.Rook:
+                    {
+                        markRookThreats(piece, x, y);
+                        break;
+                    }
+                case Piece.PieceType.Bishop:
+                    {
+                        markBishopThreats(piece, x, y);
+                        break;
+                    }
+                case Piece.PieceType.Queen:
+                    {
+                        markQueenThreats(piece, x, y);
+                        break;
+                    }
+                case Piece.PieceType.Knight:
+                    {
+                        MarkKnightThreats(piece, x, y);
+                        break;
+                    }
 
+            }
         }
 
         private void markPawnThreats(Piece pawn, int x, int y)
         {
             int direction = pawn.isWhite() ? 1 : -1;
 
-            if(x + direction >= 0 && x + direction < 8)
+            if (x + direction >= 0 && x + direction < 8)
             {
-                if(y - 1 >= 0)
+                if (y - 1 >= 0)
                 {
                     threatMap[x + direction, y - 1] = true;
                 }
-                if(y + 1 < 8)
+                if (y + 1 < 8)
                 {
                     threatMap[x + direction, y + 1] = true;
                 }
-            }            
+            }
         }
 
         private void markRookThreats(Piece rook, int x, int y)
@@ -135,18 +163,18 @@ namespace ChessGame
 
         private void MarkKnightThreats(Piece Knight, int x, int y)
         {
-            int[] dx = {2, 2, -2, -2, 1, -1, -1, 1};
-            int[] dy = {-1, 1, -1, 1, 2, 2, -2, -2 };
+            int[] dx = { 2, 2, -2, -2, 1, -1, -1, 1 };
+            int[] dy = { -1, 1, -1, 1, 2, 2, -2, -2 };
 
             for (int i = 0; i < dx.Length; i++)
             {
                 int newX = x + dx[i];
                 int newY = y + dy[i];
 
-                if(newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+                if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
                 {
                     Spot spot = getSpot(newX, newY);
-                    if(spot != null)
+                    if (spot != null)
                     {
                         threatMap[newX, newY] = true;
                     }
@@ -158,7 +186,7 @@ namespace ChessGame
             int dx = 0;
             int dy = 0;
 
-            switch(direction)
+            switch (direction)
             {
                 case Piece.Direction.North:
                     dx = -1;
@@ -167,7 +195,7 @@ namespace ChessGame
                     dx = 1;
                     break;
                 case Piece.Direction.East:
-                    dy = 1; 
+                    dy = 1;
                     break;
                 case Piece.Direction.West:
                     dy = -1;
@@ -180,7 +208,7 @@ namespace ChessGame
             int newX = x + dx;
             int newY = y + dy;
 
-            while(newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+            while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
             {
                 threatMap[newX, newY] = true;
                 Spot spot = getSpot(newX, newY);
@@ -220,12 +248,12 @@ namespace ChessGame
             int newX = x + dx;
             int newY = y + dy;
 
-            while(newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+            while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
             {
                 //set the spot on the threat map to true 
                 threatMap[newX, newY] = true;
                 Spot spot = getSpot(newX, newY);
-                if(spot != null)
+                if (spot != null)
                 {
                     break;
                 }
@@ -245,6 +273,15 @@ namespace ChessGame
             return threatMap[Kingspot.getX(), Kingspot.getY()];
         }
 
+        public bool isSquareUnderThreat(bool isWhite, int x, int y)
+        {
+
+            List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
+            updateThreatMap(opponentPieces);
+
+            return threatMap[x, y];
+        }
+
         private Spot findKing(bool isWhite)
         {
             Player player = isWhite ? whitePlayer : blackPlayer;
@@ -253,7 +290,7 @@ namespace ChessGame
             {
                 foreach (Spot spot in row)
                 {
-                    if(spot !=  null && spot.GetPiece() != null && spot.GetPiece().GetType() == typeof(Piece.King) && spot.GetPiece().isWhite() == isWhite)
+                    if (spot != null && spot.GetPiece() != null && spot.GetPiece().GetType() == typeof(Piece.King) && spot.GetPiece().isWhite() == isWhite)
                     {
                         return spot;
                     }
@@ -264,7 +301,8 @@ namespace ChessGame
         }
         public Spot getSpot(int x, int y)
         {
-            if(x < 0 || x > 7 || y < 0 || y > 7) {
+            if (x < 0 || x > 7 || y < 0 || y > 7)
+            {
                 throw new ArgumentOutOfRangeException("Index out of bounds");
             }
 
@@ -286,7 +324,7 @@ namespace ChessGame
             createPieces(new Piece.Bishop(true), 0, 2, whitePlayer);
             createPieces(new Piece.Bishop(true), 0, 5, whitePlayer);
             //initialize all the white pawns 
-            for(int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
                 createPieces(new Piece.Pawn(true), 1, i, whitePlayer);
             }
@@ -305,14 +343,14 @@ namespace ChessGame
             createPieces(new Piece.Bishop(false), 7, 2, blackPlayer);
             createPieces(new Piece.Bishop(false), 7, 5, blackPlayer);
             //initialize the black pawns on the board 
-            for(int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
                 createPieces(new Piece.Pawn(false), 6, i, blackPlayer);
             }
 
-            for(int i = 2; i < 6; i++)
+            for (int i = 2; i < 6; i++)
             {
-                for(int j = 0; i < 8; i++)
+                for (int j = 0; i < 8; i++)
                 {
                     boxes[i][j] = new Spot(i, j, null);
                 }

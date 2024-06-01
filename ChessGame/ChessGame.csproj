@@ -9,6 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="ChessPieces\Bishop_Black.png" />
+    <None Remove="ChessPieces\Rook_Black.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="ChessPieces\Bishop_Black.png" />
+    <Resource Include="ChessPieces\Rook_Black.png" />
     <Resource Include="Textures\WoodTexture.jpg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>
