@@ -74,10 +74,12 @@ namespace ChessGame
                     return false;
                 }
 
-                if (!board.isKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
+
+
                 return true;
             }
 
@@ -90,7 +92,7 @@ namespace ChessGame
 
                 if (kingSpot == null || rookSpot == null) return false;
 
-                if(!board.isKingInCheck(isWhite)) return false;
+                if(board.isKingInCheck(isWhite)) return false;
                 
                 if(kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
                 {
@@ -101,15 +103,43 @@ namespace ChessGame
 
                     for (int i = 5; i <= 6; i++)
                     {
-                        if (board.isSquareUnderThreat(isWhite, i, row) || board.getSpot(i, row) != null) return false;
+                        if (board.isSquareUnderThreat(isWhite, i, row) || board.getSpot(i, row).GetPiece() != null) return false;
                     }
+                }
+                else
+                {
+                    return false;
                 }
 
                 return true;
             }
 
-            private bool canCastleQueenside(bool isWhite)
+            private bool canCastleQueenside(bool isWhite, Board board)
             {
+                int row = isWhite ? 0 : 7;
+
+                Spot rookSpot = board.getSpot(row, 0);
+                Spot kingSpot = board.getSpot(row, 4);
+
+                if (kingSpot == null || rookSpot == null) return false;
+
+                if (board.isKingInCheck(isWhite)) return false;
+
+                if(kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
+                {
+                    if (king.hasMoved || rook.HasMoved) return false;
+
+                    for(int i = 3; i > 1; i--)
+                    {
+                        if (board.isSquareUnderThreat(isWhite, row, i) || board.getSpot(row, i).GetPiece() != null) return false;
+                    }
+
+                    if (board.getSpot(row, 1).GetPiece() != null) return false;
+                }
+                else
+                {
+                    return false;
+                }
                 return true;
             }
         }
@@ -126,7 +156,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if (!board.isKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
@@ -244,7 +274,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if (!board.isKingInCheck(isWhite()))
+                if (board.isKingInCheck(isWhite()))
                 {
                     return false;
                 }
