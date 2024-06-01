@@ -10,12 +10,32 @@
 
   <ItemGroup>
     <None Remove="ChessPieces\Bishop_Black.png" />
+    <None Remove="ChessPieces\Bishop_White.png" />
+    <None Remove="ChessPieces\King_Black.png" />
+    <None Remove="ChessPieces\King_White.png" />
+    <None Remove="ChessPieces\Knight_Black.png" />
+    <None Remove="ChessPieces\Knight_White.png" />
+    <None Remove="ChessPieces\Pawn_Black.png" />
+    <None Remove="ChessPieces\Pawn_White.png" />
+    <None Remove="ChessPieces\Queen_Black.png" />
+    <None Remove="ChessPieces\Queen_White.png" />
     <None Remove="ChessPieces\Rook_Black.png" />
+    <None Remove="ChessPieces\Rook_White.png" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="ChessPieces\Bishop_Black.png" />
+    <Resource Include="ChessPieces\Bishop_White.png" />
+    <Resource Include="ChessPieces\King_Black.png" />
+    <Resource Include="ChessPieces\King_White.png" />
+    <Resource Include="ChessPieces\Knight_Black.png" />
+    <Resource Include="ChessPieces\Knight_White.png" />
+    <Resource Include="ChessPieces\Pawn_Black.png" />
+    <Resource Include="ChessPieces\Pawn_White.png" />
+    <Resource Include="ChessPieces\Queen_Black.png" />
+    <Resource Include="ChessPieces\Queen_White.png" />
     <Resource Include="ChessPieces\Rook_Black.png" />
+    <Resource Include="ChessPieces\Rook_White.png" />
     <Resource Include="Textures\WoodTexture.jpg">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Resource>

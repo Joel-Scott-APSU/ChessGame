@@ -49,7 +49,7 @@ namespace ChessGame
                         }
                             }
                         },
-                        PieceImage = null // or set your default image here
+                        PieceImage = getInitialPieceImage(row, col) // or set your default image here
                     };
 
                     ChessBoardSquares.Add(square);
@@ -62,6 +62,33 @@ namespace ChessGame
             }
         }
 
+        private ImageSource getInitialPieceImage(int row, int col)
+        {
+            Piece piece = getInitialPiece(row, col);
+            return getPieceImage(piece);
+        }
+
+        private Piece getInitialPiece(int row, int col)
+        {
+            if (row == 1) return new Piece.Pawn(true);
+            if(row == 6) return new Piece.Pawn(false);
+
+            if(row == 0 || row == 7)
+            {
+                bool isWhite = row == 0;
+
+                switch (col)
+                {
+                    case 0: case 7: return new Piece.Rook(isWhite);
+                    case 1: case 6: return new Piece.Knight(isWhite);
+                    case 2: case 5: return new Piece.Bishop(isWhite);
+                    case 3: return new Piece.Queen(isWhite);
+                    case 4: return new Piece.King(isWhite);
+                }
+            }
+
+            return null;
+        }
         private ImageSource getPieceImage(Piece piece)
         {
             if(piece == null)
@@ -71,8 +98,17 @@ namespace ChessGame
 
             string uri = $"pack://application:,,,/ChessPieces/{piece.type.ToString()}_{(piece.isWhite() ? "White" : "Black")}.png";
 
-            return new BitmapImage(new Uri(uri));
-        }
+            try
+            {
+                return new BitmapImage(new Uri(uri));
+            }
+
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString() + uri);
+                return null;
+            }
+         }
 
         private void onSquareSelected(ChessBoardSquare square)
         {

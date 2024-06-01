@@ -92,11 +92,11 @@ namespace ChessGame
 
                 if (kingSpot == null || rookSpot == null) return false;
 
-                if(board.isKingInCheck(isWhite)) return false;
-                
-                if(kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
+                if (board.isKingInCheck(isWhite)) return false;
+
+                if (kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
                 {
-                    if(king.hasMoved || rook.HasMoved)
+                    if (king.hasMoved || rook.HasMoved)
                     {
                         return false;
                     }
@@ -125,11 +125,11 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite)) return false;
 
-                if(kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
+                if (kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
                 {
                     if (king.hasMoved || rook.HasMoved) return false;
 
-                    for(int i = 3; i > 1; i--)
+                    for (int i = 3; i > 1; i--)
                     {
                         if (board.isSquareUnderThreat(isWhite, row, i) || board.getSpot(row, i).GetPiece() != null) return false;
                     }
@@ -146,7 +146,10 @@ namespace ChessGame
 
         public class Pawn : Piece
         {
-            public Pawn(bool white) : base(white) { }
+            public Pawn(bool white) : base(white)
+            {
+                this.type = PieceType.Pawn;
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
@@ -198,7 +201,10 @@ namespace ChessGame
 
             public bool HasMoved { get { return hasMoved; } }
 
-            public Rook(bool white) : base(white) { }
+            public Rook(bool white) : base(white)
+            {
+                this.type = PieceType.Rook;
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
@@ -224,7 +230,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if(hasMoved == false)
+                if (hasMoved == false)
                 {
                     hasMoved = true;
                 }
@@ -263,7 +269,9 @@ namespace ChessGame
 
         public class Knight : Piece
         {
-            public Knight(bool white) : base(white) { }
+            public Knight(bool white) : base(white) {
+                this.type = PieceType.Knight;
+                    }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
@@ -295,7 +303,9 @@ namespace ChessGame
 
         public class Bishop : Piece
         {
-            public Bishop(bool white) : base(white) { }
+            public Bishop(bool white) : base(white) {
+                this.type = PieceType.Bishop;
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
@@ -358,7 +368,9 @@ namespace ChessGame
 
         public class Queen : Piece
         {
-            public Queen(bool white) : base(white) { }
+            public Queen(bool white) : base(white) {
+                this.type = PieceType.Queen;
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
