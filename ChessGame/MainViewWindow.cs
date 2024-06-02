@@ -22,10 +22,9 @@ namespace ChessGame
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
         }
-
         private void InitializeChessBoard()
         {
-            bool isWhite = false;
+            bool isWhite = true; // Start with white pieces
             SolidColorBrush myBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6A3B2C"));
 
             for (int row = 0; row < 8; row++)
@@ -49,7 +48,7 @@ namespace ChessGame
                         }
                             }
                         },
-                        PieceImage = getInitialPieceImage(row, col) // or set your default image here
+                        PieceImage = getInitialPieceImage(row, col)
                     };
 
                     ChessBoardSquares.Add(square);
@@ -57,7 +56,7 @@ namespace ChessGame
                     isWhite = !isWhite; // Toggle the color for the next square
                 }
 
-                // Flip the color for the next row
+                // Toggle the color for the start of the next row
                 isWhite = !isWhite;
             }
         }
@@ -70,12 +69,12 @@ namespace ChessGame
 
         private Piece getInitialPiece(int row, int col)
         {
-            if (row == 1) return new Piece.Pawn(true);
-            if(row == 6) return new Piece.Pawn(false);
+            if (row == 1) return new Piece.Pawn(false);  // Black pawns on the second row from top
+            if (row == 6) return new Piece.Pawn(true); // White pawns on the second row from bottom
 
-            if(row == 0 || row == 7)
+            if (row == 0 || row == 7)
             {
-                bool isWhite = row == 0;
+                bool isWhite = row == 7; // Bottom row (7) is white, top row (0) is black
 
                 switch (col)
                 {
@@ -89,6 +88,8 @@ namespace ChessGame
 
             return null;
         }
+
+
         private ImageSource getPieceImage(Piece piece)
         {
             if(piece == null)
