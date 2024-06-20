@@ -33,15 +33,15 @@
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
                             <Grid Width="50" Height="50"
-                                  Grid.Row="{Binding Position, Converter={StaticResource PositionConverter}, ConverterParameter=Row}"
-                                  Grid.Column="{Binding Position, Converter={StaticResource PositionConverter}, ConverterParameter=Column}">
+          Grid.Row="{Binding Position, Converter={StaticResource PositionConverter}, ConverterParameter=Row}"
+          Grid.Column="{Binding Position, Converter={StaticResource PositionConverter}, ConverterParameter=Column}"
+          MouseDown="PieceImage_MouseDown">
+                                <!-- Attach event handler to the Grid -->
                                 <Border Background="{Binding Background}" 
-                                        BorderBrush="{Binding IsHighlighted, Converter={StaticResource BooleanToHighlightBorderBrushConverter}}"
-                                        BorderThickness="3"
-                                        Width="50" Height="50">
-                                    <!-- Event handler moved to the Image element -->
-                                    <Image Source="{Binding PieceImage}" Stretch="Uniform" Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
-                                           MouseDown="PieceImage_MouseDown"/>
+                BorderBrush="{Binding IsHighlighted, Converter={StaticResource BooleanToHighlightBorderBrushConverter}}"
+                BorderThickness="3"
+                Width="50" Height="50">
+                                    <Image Source="{Binding PieceImage}" Stretch="Uniform" Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Border>
                             </Grid>
                         </DataTemplate>

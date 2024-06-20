@@ -34,12 +34,13 @@ namespace ChessGame
 
         private void PieceImage_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (sender is Image image && image.DataContext is ChessBoardSquare square)
+            if (sender is Grid grid && grid.DataContext is ChessBoardSquare square)
             {
                 var viewModel = this.DataContext as MainWindowViewModel;
-                viewModel.OnSquareSelected(square);
+                viewModel.OnSquareSelected(square);  // Pass the clicked square to the view model
             }
         }
+
 
     }
 }
