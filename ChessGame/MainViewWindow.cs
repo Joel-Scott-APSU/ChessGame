@@ -1,10 +1,10 @@
-﻿using ChessGame;
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows.Controls;
-using System.Windows.Media.Imaging;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows;
+using ChessGame;
+using System.Windows.Controls;
 using System.Windows.Shapes;
 
 public class MainWindowViewModel : INotifyPropertyChanged
@@ -19,6 +19,7 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
         InitializeChessBoard();
+        game = new Game();  // Initialize the game
     }
 
     private void InitializeChessBoard()
@@ -32,23 +33,25 @@ public class MainWindowViewModel : INotifyPropertyChanged
             {
                 var square = new ChessBoardSquare
                 {
+                    X = col,
+                    Y = row,
                     Background = new VisualBrush
                     {
                         Visual = new Grid
                         {
                             Children =
-                        {
-                            new Image
                             {
-                                Source = new BitmapImage(new Uri("pack://application:,,,/Textures/WoodTexture.jpg")),
-                                Stretch = Stretch.Fill
-                            },
-                            new Rectangle
-                            {
-                                Fill = (isWhiteSquare ? Brushes.White : darkSquareBrush),
-                                Opacity = 0.5
+                                new Image
+                                {
+                                    Source = new BitmapImage(new Uri("pack://application:,,,/Textures/WoodTexture.jpg")),
+                                    Stretch = Stretch.Fill
+                                },
+                                new Rectangle
+                                {
+                                    Fill = (isWhiteSquare ? Brushes.White : darkSquareBrush),
+                                    Opacity = 0.5
+                                }
                             }
-                        }
                         }
                     },
                     PieceImage = getInitialPieceImage(row, col)
@@ -74,14 +77,14 @@ public class MainWindowViewModel : INotifyPropertyChanged
         {
             bool isWhite = row == 7; // Bottom row (7) is white, top row (0) is black
 
-           /* switch (col)
+            switch (col)
             {
                 case 0: case 7: return new Piece.Rook(isWhite);
                 case 1: case 6: return new Piece.Knight(isWhite);
                 case 2: case 5: return new Piece.Bishop(isWhite);
                 case 3: return new Piece.Queen(isWhite);
                 case 4: return new Piece.King(isWhite);
-            }*/
+            }
         }
 
         return null;
@@ -113,20 +116,25 @@ public class MainWindowViewModel : INotifyPropertyChanged
         }
     }
 
-    private void onSquareSelected(ChessBoardSquare square)
+    public void OnSquareSelected(ChessBoardSquare square)
     {
-        if (selectedSquare == null)
+        if (selectedSquare == square)
         {
-            selectedSquare = square;
+            // If the same square is clicked again, remove highlight
+            square.IsHighlighted = false;
+            selectedSquare = null;
         }
         else
         {
-            if (game.movePiece(game.selectedSquare, square))
+            // Remove highlight from the previously selected square
+            if (selectedSquare != null)
             {
-                updateUIForMove(game.selectedSquare, square);
+                selectedSquare.IsHighlighted = false;
             }
 
-            game.selectedSquare = null;
+            // Highlight the newly selected square
+            square.IsHighlighted = true;
+            selectedSquare = square;
         }
     }
 
@@ -134,5 +142,16 @@ public class MainWindowViewModel : INotifyPropertyChanged
     {
         toSquare.PieceImage = fromSquare.PieceImage;
         fromSquare.PieceImage = null;
+
+        // Remove highlight from the fromSquare after move
+        fromSquare.IsHighlighted = false;
+
+        // Notify that the properties have changed (UI binding)
+        OnPropertyChanged(nameof(ChessBoardSquares));
+    }
+
+    protected void OnPropertyChanged(string name)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }
