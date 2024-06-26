@@ -136,12 +136,13 @@ namespace ChessGame
                 // Attempt to move the piece if the clicked square is not the selected square
                 if (!square.IsHighlighted)
                 {
-                   // bool moveSuccessful = game.movePiece(selectedSquare, square);
-                    //Debug.WriteLine($"MoveSuccessful: {moveSuccessful}");
-                    //if (moveSuccessful)
-                    //{
+                    Debug.WriteLine($"Selected Square: {selectedSquare} Square: {square}");
+                    bool moveSuccessful = game.movePiece(selectedSquare, square);
+                    Debug.WriteLine($"MoveSuccessful: {moveSuccessful}");
+                    if (moveSuccessful)
+                    {
                         MovePiece(selectedSquare, square);
-                    //}
+                    }
                 }
 
                 // Reset highlighting and selected square
