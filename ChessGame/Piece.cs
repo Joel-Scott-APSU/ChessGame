@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Linq;
 using System.Printing;
@@ -156,25 +157,28 @@ namespace ChessGame
             {
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
+                    Debug.WriteLine("Piece of the same color on the spot");
                     return false;
                 }
 
                 if (board.isKingInCheck(isWhite()))
                 {
+                    Debug.WriteLine("Move puts your own king in check");
                     return false;
                 }
 
-                int x = Math.Abs(start.getX() - end.getX());
-                int y = Math.Abs(start.getY() - end.getY());
+                int row = Math.Abs(start.GetRow() - end.GetRow());
+                int column = Math.Abs(start.GetColumn() - end.GetColumn());
 
-                int startPoint = isWhite() ? 1 : 6;
+                int startPoint = isWhite() ? 6 : 1;
 
 
-                if ((start.getY() != startPoint && y == 2) ||
-                    (y != 1 || x != 0) ||
+                if ((start.GetRow() != startPoint && row == 2) ||
+                    (row != 1 || column != 0) ||
                     (!enPassant()) ||
                     !canPawnAttack(board, start, end))
                 {
+                    Debug.WriteLine("Pawn tries to move too much, is not enPassant, cannot attack, or the movement was not moving rows but columns");
                     return false;
                 }
 
@@ -189,9 +193,9 @@ namespace ChessGame
             public bool canPawnAttack(Board board, Spot start, Spot end)
             {
                 int direction = isWhite() ? 1 : -1;
-                int y = (end.getY() - start.getY());
-                int x = Math.Abs(start.getX() - end.getX());
-                return (direction == y && x == 1 && end.GetPiece() != null && end.GetPiece().isWhite() != this.isWhite());
+                int row = (end.GetRow() - start.GetRow());
+                int column = Math.Abs(start.GetColumn() - end.GetColumn());
+                return (direction == column && row == 1 && end.GetPiece() != null && end.GetPiece().isWhite() != this.isWhite());
             }
         }
 
@@ -209,10 +213,10 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int startX = start.getX();
-                int startY = start.getY();
-                int endX = end.getX();
-                int endY = end.getY();
+                int startRow = start.GetColumn();
+                int startColumn = start.GetRow();
+                int endRow = end.GetColumn();
+                int endColumn = end.GetRow();
 
                 //spot is occupied by a piece of the same color 
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
@@ -225,7 +229,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if (!legalRookMove(board, startX, startY, endX, endY))
+                if (!legalRookMove(board, startRow, startColumn, endRow, endColumn))
                 {
                     return false;
                 }
@@ -238,20 +242,20 @@ namespace ChessGame
                 return true;
             }
 
-            public static bool legalRookMove(Board board, int startX, int startY, int endX, int endY)
+            public static bool legalRookMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
-                int movementDirectionX = (endX - startX) == 0 ? 0 : (endX - startX) / Math.Abs(endX - startX);
-                int movementDirectionY = (endY - startY) == 0 ? 0 : (endY - startY) / Math.Abs(endY - startY);
+                int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
+                int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
                 if (movementDirectionX != 0 && movementDirectionY != 0)
                 {
                     return false;
                 }
 
-                int currentX = startX + movementDirectionX;
-                int currentY = startY + movementDirectionY;
+                int currentX = startRow + movementDirectionX;
+                int currentY = startColumn + movementDirectionY;
 
-                while (currentX != endX || currentY != endY)
+                while (currentX != endRow || currentY != endColumn)
                 {
                     if (board.getSpot(currentX, currentY).GetPiece() != null)
                     {
@@ -287,8 +291,8 @@ namespace ChessGame
                     return false;
                 }
 
-                int x = Math.Abs(start.getX() - end.getX());
-                int y = Math.Abs(start.getY() - end.getY());
+                int x = Math.Abs(start.GetColumn() - end.GetColumn());
+                int y = Math.Abs(start.GetRow() - end.GetRow());
 
                 if ((x * y) != 2)
                 {
@@ -310,10 +314,10 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int startX = start.getX();
-                int startY = start.getY();
-                int endX = end.getX();
-                int endY = end.getY();
+                int startRow = start.GetColumn();
+                int startColumn = start.GetRow();
+                int endRow = end.GetColumn();
+                int endColumn = end.GetRow();
 
                 if (board.isKingInCheck(isWhite()))
                 {
@@ -325,12 +329,12 @@ namespace ChessGame
                     return false;
                 }
 
-                if (startX == endX || startY == endY)
+                if (startRow == endRow || startColumn == endColumn)
                 {
                     return false;
                 }
 
-                if (!legalBishopMove(board, startX, startY, endX, endY))
+                if (!legalBishopMove(board, startRow, startColumn, endRow, endColumn))
                 {
                     return false;
                 }
@@ -338,28 +342,28 @@ namespace ChessGame
                 return true;
             }
 
-            public static bool legalBishopMove(Board board, int startX, int startY, int endX, int endY)
+            public static bool legalBishopMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
-                int movementDirectionX = Math.Sign(endX - startX);
-                int MovementDirectionY = Math.Sign(endY - startY);
+                int RowMovementDirection = Math.Sign(endRow - startRow);
+                int ColumnMovementDirection = Math.Sign(endColumn - startColumn);
 
-                if (Math.Abs(endX - startX) != Math.Abs(endY - startY))
+                if (Math.Abs(endRow - startRow) != Math.Abs(endColumn - startColumn))
                 {
                     return false;
                 }
 
-                int currentX = startX + movementDirectionX;
-                int currentY = startY + MovementDirectionY;
+                int currentRow = startRow + RowMovementDirection;
+                int currentColumn = startColumn + ColumnMovementDirection;
 
-                while (currentX != endX && currentY != endY)
+                while (currentRow != endRow && currentColumn != endColumn)
                 {
-                    if (board.getSpot(currentX, currentY).GetPiece() != null)
+                    if (board.getSpot(currentRow, currentColumn).GetPiece() != null)
                     {
                         return false;
                     }
 
-                    currentX += movementDirectionX;
-                    currentY += MovementDirectionY;
+                    currentRow += RowMovementDirection;
+                    currentColumn += ColumnMovementDirection;
                 }
 
                 return true;
@@ -375,10 +379,10 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int startX = start.getX();
-                int startY = start.getY();
-                int endX = end.getX();
-                int endY = end.getY();
+                int startRow = start.GetColumn();
+                int startColumn = start.GetRow();
+                int endRow = end.GetColumn();
+                int endColumn = end.GetRow();
 
                 if (board.isKingInCheck(isWhite()))
                 {
@@ -390,7 +394,7 @@ namespace ChessGame
                     return false;
                 }
 
-                if (!Rook.legalRookMove(board, startX, startY, endX, endY) && !Bishop.legalBishopMove(board, startX, startY, endX, endY))
+                if (!Rook.legalRookMove(board, startRow, startColumn, endRow, endColumn) && !Bishop.legalBishopMove(board, startRow, startColumn, endRow, endColumn))
                 {
                     return false;
                 }

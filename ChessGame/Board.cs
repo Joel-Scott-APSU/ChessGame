@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Media.Media3D;
 
 namespace ChessGame
 {
@@ -23,16 +21,17 @@ namespace ChessGame
             for (int i = 0; i < 8; i++)
             {
                 boxes[i] = new Spot[8];
+                for (int j = 0; j < 8; j++)
+                {
+                    boxes[i][j] = null; // Initialize all spots as null
+                }
             }
 
             threatMap = new bool[8, 8];
-            //initializes the new board 
-            this.resetBoard();
-
-
+            // Initializes the new board
+            resetBoard();
         }
 
-        //using list of pieces to create the threat map based on the position of the opponents pieces at the beginning of each turn
         public void updateThreatMap(List<Piece> opponentPieces)
         {
             ClearThreatMap();
@@ -43,14 +42,13 @@ namespace ChessGame
             }
         }
 
-        //clears the threat map so it can be reinitialized each turn 
         private void ClearThreatMap()
         {
-            for (int i = 0; i < 8; i++)
+            for (int row = 0; row < 8; row++)
             {
-                for (int j = 0; j < 8; j++)
+                for (int col = 0; col < 8; col++)
                 {
-                    threatMap[i, j] = false;
+                    threatMap[row, col] = false;
                 }
             }
         }
@@ -67,7 +65,7 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    if (boxes[i][j].GetPiece() == piece)
+                    if (boxes[i][j]?.GetPiece() == piece)
                     {
                         position = boxes[i][j];
                         break;
@@ -81,185 +79,175 @@ namespace ChessGame
                 throw new InvalidOperationException("Piece not found on the board");
             }
 
-            int x = position.getX();
-            int y = position.getY();
+            int row = position.GetRow();
+            int col = position.GetColumn();
 
             switch (piece.type)
             {
                 case Piece.PieceType.Pawn:
-                    {
-                        markPawnThreats(piece, x, y);
-                        break;
-                    }
+                    markPawnThreats(piece, row, col);
+                    break;
                 case Piece.PieceType.Rook:
-                    {
-                        markRookThreats(piece, x, y);
-                        break;
-                    }
+                    markRookThreats(piece, row, col);
+                    break;
                 case Piece.PieceType.Bishop:
-                    {
-                        markBishopThreats(piece, x, y);
-                        break;
-                    }
+                    markBishopThreats(piece, row, col);
+                    break;
                 case Piece.PieceType.Queen:
-                    {
-                        markQueenThreats(piece, x, y);
-                        break;
-                    }
+                    markQueenThreats(piece, row, col);
+                    break;
                 case Piece.PieceType.Knight:
-                    {
-                        MarkKnightThreats(piece, x, y);
-                        break;
-                    }
-
+                    MarkKnightThreats(piece, row, col);
+                    break;
             }
         }
 
-        private void markPawnThreats(Piece pawn, int x, int y)
+        private void markPawnThreats(Piece pawn, int row, int col)
         {
             int direction = pawn.isWhite() ? 1 : -1;
 
-            if (x + direction >= 0 && x + direction < 8)
+            if (row + direction >= 0 && row + direction < 8)
             {
-                if (y - 1 >= 0)
+                if (col - 1 >= 0)
                 {
-                    threatMap[x + direction, y - 1] = true;
+                    threatMap[row + direction, col - 1] = true;
                 }
-                if (y + 1 < 8)
+                if (col + 1 < 8)
                 {
-                    threatMap[x + direction, y + 1] = true;
+                    threatMap[row + direction, col + 1] = true;
                 }
             }
         }
 
-        private void markRookThreats(Piece rook, int x, int y)
+        private void markRookThreats(Piece rook, int row, int col)
         {
             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
             {
-                MarkThreatsInDirectionStraight(rook, x, y, direction);
+                MarkThreatsInDirectionStraight(rook, row, col, direction);
             }
         }
 
-        private void markBishopThreats(Piece Bishop, int x, int y)
+        private void markBishopThreats(Piece Bishop, int row, int col)
         {
             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
             {
-                MarkThreatsInDirectionDiagonal(Bishop, x, y, direction);
+                MarkThreatsInDirectionDiagonal(Bishop, row, col, direction);
             }
         }
 
-        private void markQueenThreats(Piece Queen, int x, int y)
+        private void markQueenThreats(Piece Queen, int row, int col)
         {
             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
             {
-                MarkThreatsInDirectionStraight(Queen, x, y, direction);
+                MarkThreatsInDirectionStraight(Queen, row, col, direction);
             }
 
             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
             {
-                MarkThreatsInDirectionDiagonal(Queen, x, y, direction);
+                MarkThreatsInDirectionDiagonal(Queen, row, col, direction);
             }
         }
 
-        private void MarkKnightThreats(Piece Knight, int x, int y)
+        private void MarkKnightThreats(Piece Knight, int row, int col)
         {
-            int[] dx = { 2, 2, -2, -2, 1, -1, -1, 1 };
-            int[] dy = { -1, 1, -1, 1, 2, 2, -2, -2 };
+            int[] rows = { 2, 2, 1, -1, -2, -2, 1, -1 };
+            int[] columns = { -1, 1, -2, -2, -1, 1, 2, 2 };
 
-            for (int i = 0; i < dx.Length; i++)
+            for (int i = 0; i < rows.Length; i++)
             {
-                int newX = x + dx[i];
-                int newY = y + dy[i];
+                int newRow = row + rows[i];
+                int newColumn = col + columns[i];
 
-                if (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+                if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
-                    Spot spot = getSpot(newX, newY);
+                    Spot spot = getSpot(newRow, newColumn);
+
                     if (spot != null)
                     {
-                        threatMap[newX, newY] = true;
+                        threatMap[newRow, newColumn] = true;
                     }
                 }
             }
         }
-        private void MarkThreatsInDirectionStraight(Piece piece, int x, int y, Piece.Direction direction)
+
+        private void MarkThreatsInDirectionStraight(Piece piece, int row, int col, Piece.Direction direction)
         {
-            int dx = 0;
-            int dy = 0;
+            int Rows = 0;
+            int Columns = 0;
 
             switch (direction)
             {
                 case Piece.Direction.North:
-                    dx = -1;
+                    Rows = -1;
                     break;
                 case Piece.Direction.South:
-                    dx = 1;
+                    Rows = 1;
                     break;
                 case Piece.Direction.East:
-                    dy = 1;
+                    Columns = 1;
                     break;
                 case Piece.Direction.West:
-                    dy = -1;
+                    Columns = -1;
                     break;
                 default:
                     return;
-
             }
 
-            int newX = x + dx;
-            int newY = y + dy;
+            int newRow = row + Rows;
+            int newColumn = col + Columns;
 
-            while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+            while (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
             {
-                threatMap[newX, newY] = true;
-                Spot spot = getSpot(newX, newY);
-                if (spot.GetPiece != null)
+                threatMap[newRow, newColumn] = true;
+                Spot spot = getSpot(newRow, newColumn);
+                if (spot?.GetPiece() != null)
                 {
                     break;
                 }
 
-                newX += dx;
-                newY += dy;
+                newRow += Rows;
+                newColumn += Columns;
             }
         }
 
-        private void MarkThreatsInDirectionDiagonal(Piece piece, int x, int y, Piece.Direction direction)
+        private void MarkThreatsInDirectionDiagonal(Piece piece, int row, int col, Piece.Direction direction)
         {
-            int dx = 0;
-            int dy = 0;
+            int Rows = 0;
+            int Columns = 0;
 
             switch (direction)
             {
                 case Piece.Direction.Northeast:
-                    dx = -1; dy = 1;
+                    Rows = -1; Columns = 1;
                     break;
                 case Piece.Direction.Northwest:
-                    dx = -1; dy = -1;
+                    Rows = -1; Columns = -1;
                     break;
                 case Piece.Direction.Southeast:
-                    dx = 1; dy = 1;
+                    Rows = 1; Columns = 1;
                     break;
                 case Piece.Direction.Southwest:
-                    dx = 1; dy = -1;
+                    Rows = 1; Columns = -1;
                     break;
                 default:
                     return;
             }
 
-            int newX = x + dx;
-            int newY = y + dy;
+            int newRow = row + Rows;
+            int newColumn = col + Columns;
 
-            while (newX >= 0 && newX < 8 && newY >= 0 && newY < 8)
+            while (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
             {
-                //set the spot on the threat map to true 
-                threatMap[newX, newY] = true;
-                Spot spot = getSpot(newX, newY);
-                if (spot != null)
+                // Set the spot on the threat map to true 
+                threatMap[newRow, newColumn] = true;
+                Spot spot = getSpot(newRow, newColumn);
+                if (spot?.GetPiece() != null)
                 {
                     break;
                 }
 
-                newX += dx;
-                newY += dy;
+                newRow += Rows;
+                newColumn += Columns;
             }
         }
 
@@ -270,16 +258,15 @@ namespace ChessGame
             List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
             updateThreatMap(opponentPieces);
 
-            return threatMap[Kingspot.getX(), Kingspot.getY()];
+            return threatMap[Kingspot.GetRow(), Kingspot.GetColumn()];
         }
 
-        public bool isSquareUnderThreat(bool isWhite, int x, int y)
+        public bool isSquareUnderThreat(bool isWhite, int row, int col)
         {
-
             List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
             updateThreatMap(opponentPieces);
 
-            return threatMap[x, y];
+            return threatMap[row, col];
         }
 
         private Spot findKing(bool isWhite)
@@ -299,69 +286,86 @@ namespace ChessGame
 
             return null;
         }
-        public Spot getSpot(int x, int y)
+
+        public Spot getSpot(int row, int col)
         {
-            if (x < 0 || x > 7 || y < 0 || y > 7)
+            if (row < 0 || row > 7 || col < 0 || col > 7)
             {
                 throw new ArgumentOutOfRangeException("Index out of bounds");
             }
-
-            return boxes[x][y];
+            return boxes[row][col];
         }
+
         public void resetBoard()
         {
-            //initialize the white king on the board 
-            createPieces(new Piece.King(true), 0, 4, whitePlayer);
-            //initialize the white queen on the board 
-            createPieces(new Piece.Queen(true), 0, 3, whitePlayer);
-            //initialize the white rooks on the board 
-            createPieces(new Piece.Rook(true), 0, 0, whitePlayer);
-            createPieces(new Piece.Rook(true), 0, 7, whitePlayer);
-            //initialize the white knights on the board 
-            createPieces(new Piece.Knight(true), 0, 1, whitePlayer);
-            createPieces(new Piece.Knight(true), 0, 6, whitePlayer);
-            //initialize the white bishops on the board 
-            createPieces(new Piece.Bishop(true), 0, 2, whitePlayer);
-            createPieces(new Piece.Bishop(true), 0, 5, whitePlayer);
-            //initialize all the white pawns 
+            // Initialize the white king on the board 
+            createPieces(new Piece.King(true), 7, 4, whitePlayer);
+            // Initialize the white queen on the board 
+            createPieces(new Piece.Queen(true), 7, 3, whitePlayer);
+            // Initialize the white rooks on the board 
+            createPieces(new Piece.Rook(true), 7, 0, whitePlayer);
+            createPieces(new Piece.Rook(true), 7, 7, whitePlayer);
+            // Initialize the white knights on the board 
+            createPieces(new Piece.Knight(true), 7, 1, whitePlayer);
+            createPieces(new Piece.Knight(true), 7, 6, whitePlayer);
+            // Initialize the white bishops on the board 
+            createPieces(new Piece.Bishop(true), 7, 2, whitePlayer);
+            createPieces(new Piece.Bishop(true), 7, 5, whitePlayer);
+            // Initialize all the white pawns 
             for (int i = 0; i < 8; i++)
             {
-                createPieces(new Piece.Pawn(true), 1, i, whitePlayer);
+                createPieces(new Piece.Pawn(true), 6, i, whitePlayer);
             }
 
-            //initialize the black king on the board
-            createPieces(new Piece.King(false), 7, 4, blackPlayer);
-            //initialize the black queen on the board 
-            createPieces(new Piece.Queen(false), 7, 3, blackPlayer);
-            //initialize the black rook on the board 
-            createPieces(new Piece.Rook(false), 7, 0, blackPlayer);
-            createPieces(new Piece.Rook(false), 7, 7, blackPlayer);
-            //initialize the black Knight on the board
-            createPieces(new Piece.Knight(false), 7, 1, blackPlayer);
-            createPieces(new Piece.Knight(false), 7, 6, blackPlayer);
-            //initialize the black bishop on the board
-            createPieces(new Piece.Bishop(false), 7, 2, blackPlayer);
-            createPieces(new Piece.Bishop(false), 7, 5, blackPlayer);
-            //initialize the black pawns on the board 
+            // Initialize the black king on the board
+            createPieces(new Piece.King(false), 0, 4, blackPlayer);
+            // Initialize the black queen on the board 
+            createPieces(new Piece.Queen(false), 0, 3, blackPlayer);
+            // Initialize the black rook on the board 
+            createPieces(new Piece.Rook(false), 0, 0, blackPlayer);
+            createPieces(new Piece.Rook(false), 0, 7, blackPlayer);
+            // Initialize the black Knight on the board
+            createPieces(new Piece.Knight(false), 0, 1, blackPlayer);
+            createPieces(new Piece.Knight(false), 0, 6, blackPlayer);
+            // Initialize the black bishop on the board
+            createPieces(new Piece.Bishop(false), 0, 2, blackPlayer);
+            createPieces(new Piece.Bishop(false), 0, 5, blackPlayer);
+            // Initialize the black pawns on the board 
             for (int i = 0; i < 8; i++)
             {
-                createPieces(new Piece.Pawn(false), 6, i, blackPlayer);
+                createPieces(new Piece.Pawn(false), 1, i, blackPlayer);
             }
 
-            for (int i = 2; i < 6; i++)
+            // Print the board
+            StringBuilder sb = new StringBuilder();
+
+            // Iterate over rows from bottom to top
+            for (int row = 7; row >= 0; row--)
             {
-                for (int j = 0; i < 8; i++)
+                // Iterate over columns from left to right
+                for (int col = 0; col < 8; col++)
                 {
-                    boxes[i][j] = new Spot(i, j, null);
+                    Spot spot = getSpot(row, col);
+
+                    if (spot != null && spot.GetPiece() != null)
+                    {
+                        string color = spot.GetPiece().isWhite() ? "W" : "B";
+                        sb.Append($"{spot} {color} | ");
+                    }
+                    else
+                    {
+                        sb.Append("NULL | ");
+                    }
                 }
+                sb.AppendLine(); // Move to the next row after each iteration of y
             }
 
-
+            Debug.WriteLine(sb.ToString());
         }
 
-        public void createPieces(Piece piece, int x, int y, Player player)
+        public void createPieces(Piece piece, int row, int col, Player player)
         {
-            boxes[x][y] = new Spot(x, y, piece);
+            boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
         }
     }

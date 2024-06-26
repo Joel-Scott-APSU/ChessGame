@@ -30,5 +30,10 @@ namespace ChessGame
         {
             return pieces;
         }
+
+        public override string ToString()
+        {
+            return isWhite ? "WhitePlayer" : "BlackPlayer";
+        }
     }
 }

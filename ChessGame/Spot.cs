@@ -1,33 +1,33 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ChessGame
 {
     public class Spot
     {
-        private int x;
-        private int y;
+        private int column; // Rename 'x' to 'column' to represent the column index
+        private int row;    // Rename 'y' to 'row' to represent the row index
         private Piece piece;
 
-
-        internal Spot(int x, int y, Piece piece)
+        public Spot(int column, int row, Piece piece)
         {
-            this.setX(x);
-            this.y = y;
+            this.column = column;
+            this.row = row;
             this.piece = piece;
         }
 
-        public int getX() { return x; }
-        public void setX(int x) { this.x = x; }
-        public int getY() { return y; }
-        public void setY(int y) {  this.y = y; }
+        public int GetColumn() { return column; }
+        public void SetColumn(int column) { this.column = column; }
+
+        public int GetRow() { return row; }
+        public void SetRow(int row) { this.row = row; }
 
         public Piece GetPiece() { return piece; }
+        public void SetPiece(Piece piece) { this.piece = piece; }
 
-        public void setPiece(Piece piece) { this.piece = piece; }
-        
+        public override string ToString()
+        {
+            string pieceString = piece != null ? piece.ToString() : "Empty";
+            return $"Spot [Column={column}, Row={row}, Piece={pieceString}]";
+        }
     }
 }

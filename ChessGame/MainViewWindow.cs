@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection.PortableExecutable;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -17,10 +19,12 @@ namespace ChessGame
 
         private ChessBoardSquare selectedSquare;
 
+        private Game game;
         public MainWindowViewModel()
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
+            game = new Game();
         }
 
         private void InitializeChessBoard()
@@ -28,14 +32,14 @@ namespace ChessGame
             bool isWhiteSquare = true;
             SolidColorBrush darkSquareBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6A3B2C"));
 
-            for (int row = 0; row < 8; row++)
+            for (int i = 0; i < 8; i++)
             {
-                for (int col = 0; col < 8; col++)
+                for (int j = 0; j < 8; j++)
                 {
                     var square = new ChessBoardSquare
                     {
-                        X = col,
-                        Y = row,
+                        row = i,
+                        column = j,
                         Background = new VisualBrush
                         {
                             Visual = new Grid
@@ -55,7 +59,7 @@ namespace ChessGame
                                 }
                             }
                         },
-                        PieceImage = GetInitialPieceImage(row, col)
+                        PieceImage = GetInitialPieceImage(i, j)
                     };
 
                     ChessBoardSquares.Add(square);
@@ -129,10 +133,16 @@ namespace ChessGame
             }
             else
             {
-                // Move the piece if the clicked square is highlighted
+                // Attempt to move the piece if the clicked square is not the selected square
                 if (!square.IsHighlighted)
                 {
-                    MovePiece(selectedSquare, square);
+                    Debug.WriteLine($"Selected Square: {selectedSquare} Square: {square}");
+                    bool moveSuccessful = game.movePiece(selectedSquare, square);
+                    Debug.WriteLine($"MoveSuccessful: {false}");
+                    if (moveSuccessful)
+                    {
+                        MovePiece(selectedSquare, square);
+                    }
                 }
 
                 // Reset highlighting and selected square
@@ -140,6 +150,7 @@ namespace ChessGame
                 selectedSquare = null;
             }
         }
+
 
         private void MovePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {

@@ -10,8 +10,8 @@ namespace ChessGame
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public int X { get; set; }
-        public int Y { get; set; }
+        public int row { get; set; }
+        public int column { get; set; }
         public VisualBrush Background { get; set; }
 
         public ImageSource PieceImage
@@ -37,9 +37,16 @@ namespace ChessGame
             }
         }
 
+        public string Position => $"{row},{column}"; // Combine X and Y into a string
+
         protected void OnPropertyChanged(string propertyName)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public override string ToString()
+        {
+            return $"ChessBoardSquare [{row}, {column}]";
         }
     }
 }
