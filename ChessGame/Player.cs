@@ -30,10 +30,10 @@ namespace ChessGame
         {
             return pieces;
         }
-
         public override string ToString()
         {
-            return isWhite ? "WhitePlayer" : "BlackPlayer";
+            string piecesStr = string.Join(", ", pieces.Select(p => p.ToString()));
+            return $"{(isWhite ? "WhitePlayer" : "BlackPlayer")} with pieces: {piecesStr}";
         }
     }
 }

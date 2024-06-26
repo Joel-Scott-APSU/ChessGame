@@ -56,6 +56,10 @@ namespace ChessGame
 
         public PieceType type { get; set; }
 
+        public override string ToString()
+        {
+            return $"{(isWhite() ? "White" : "Black")} {type}";
+        }
         public class King : Piece
         {
             public bool castling = false;

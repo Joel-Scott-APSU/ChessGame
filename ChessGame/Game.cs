@@ -35,10 +35,10 @@ namespace ChessGame
             int fromColumn = fromSquare.column;
             int toRow = toSquare.row;
             int toColumn = toSquare.column;
-
+            Debug.WriteLine($"White Player Pieces: {whitePlayer}");
             Piece movingPiece = board.getSpot(fromRow, fromColumn).GetPiece();  //piece that is currently attempting to move 
             Trace.WriteLine($"CurrentPieces: {currentTurn.getPieces()}");
-            if (movingPiece == null || !currentTurn.getPieces().Contains(movingPiece)) //if there is no piece moving or it is not that players turn
+            if (movingPiece == null) //if there is no piece moving or it is not that players turn
             {
                 Trace.WriteLine($"Moving Piece: {movingPiece}");
                 if (movingPiece != null)

@@ -365,6 +365,7 @@ namespace ChessGame
 
         public void createPieces(Piece piece, int row, int col, Player player)
         {
+
             boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
         }
