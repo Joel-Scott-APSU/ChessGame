@@ -32,8 +32,15 @@ namespace ChessGame
         }
         public override string ToString()
         {
-            string piecesStr = string.Join(", ", pieces.Select(p => p.ToString()));
-            return $"{(isWhite ? "WhitePlayer" : "BlackPlayer")} with pieces: {piecesStr}";
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"{(isWhite ? "White Player" : "Black Player")} Pieces:");
+
+            foreach (Piece piece in pieces)
+            {
+                sb.AppendLine(piece.ToString());
+            }
+
+            return sb.ToString();
         }
     }
 }

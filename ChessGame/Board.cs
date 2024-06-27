@@ -13,10 +13,10 @@ namespace ChessGame
         private Player whitePlayer;
         private Player blackPlayer;
 
-        public Board()
+        public Board(Player whitePlayer, Player blackPlayer)
         {
-            whitePlayer = new Player(true);
-            blackPlayer = new Player(false);
+            this.whitePlayer = whitePlayer;
+            this.blackPlayer = blackPlayer;
 
             for (int i = 0; i < 8; i++)
             {
@@ -336,31 +336,12 @@ namespace ChessGame
                 createPieces(new Piece.Pawn(false), 1, i, blackPlayer);
             }
 
-            // Print the board
-            StringBuilder sb = new StringBuilder();
+            string whitePieces = $"CurrentPieces: {string.Join(", ", whitePlayer.getPieces())}";
+            string blackPieces = $"CurrentBlackPieces: {string.Join(", ", blackPlayer.getPieces())}";
+           
+            Debug.WriteLine(whitePieces);
+            Debug.WriteLine(blackPieces);
 
-            // Iterate over rows from bottom to top
-            for (int row = 7; row >= 0; row--)
-            {
-                // Iterate over columns from left to right
-                for (int col = 0; col < 8; col++)
-                {
-                    Spot spot = getSpot(row, col);
-
-                    if (spot != null && spot.GetPiece() != null)
-                    {
-                        string color = spot.GetPiece().isWhite() ? "W" : "B";
-                        sb.Append($"{spot} {color} | ");
-                    }
-                    else
-                    {
-                        sb.Append("NULL | ");
-                    }
-                }
-                sb.AppendLine(); // Move to the next row after each iteration of y
-            }
-
-            Debug.WriteLine(sb.ToString());
         }
 
         public void createPieces(Piece piece, int row, int col, Player player)

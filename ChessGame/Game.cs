@@ -22,9 +22,9 @@ namespace ChessGame
 
         private void initializeGame()
         {
-            board = new Board();
             whitePlayer = new Player(true);
             blackPlayer = new Player(false);
+            board = new Board(whitePlayer, blackPlayer);
             currentTurn = whitePlayer;
 
         }
@@ -35,17 +35,14 @@ namespace ChessGame
             int fromColumn = fromSquare.column;
             int toRow = toSquare.row;
             int toColumn = toSquare.column;
-            Debug.WriteLine($"White Player Pieces: {whitePlayer}");
+
+            string whitePieces = $"CurrentPieces: {string.Join(", ", currentTurn.getPieces())}";
+            Trace.WriteLine(whitePieces);
+
             Piece movingPiece = board.getSpot(fromRow, fromColumn).GetPiece();  //piece that is currently attempting to move 
-            Trace.WriteLine($"CurrentPieces: {currentTurn.getPieces()}");
+
             if (movingPiece == null) //if there is no piece moving or it is not that players turn
             {
-                Trace.WriteLine($"Moving Piece: {movingPiece}");
-                if (movingPiece != null)
-                {
-                    Trace.WriteLine($"Moving Piece Color: {movingPiece.isWhite()}");
-                }
-                Trace.WriteLine($"current Turn {currentTurn}");
                 return false;
             }
 
@@ -53,6 +50,7 @@ namespace ChessGame
             Spot end = board.getSpot(toRow, toColumn); //ending point where selected piece is trying to move 
             Trace.WriteLine($"Start: {start} End: {end}");
             Trace.WriteLine($"Legal Move {movingPiece.legalMove(board, start, end)}");
+
             if (movingPiece.legalMove(board, start, end))  //if the selected pieces move is legal
             {
                 Piece capturedPiece = end.GetPiece(); //piece that is attempting to be captured
