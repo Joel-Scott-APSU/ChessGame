@@ -17,6 +17,8 @@ namespace ChessGame
         private bool taken = false;
         private bool white = false;
 
+        private ChessBoardSquare selectedSquare;
+
         public Piece(bool white)
         {
             this.setWhite(white);
@@ -159,10 +161,17 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                if (end == null)
                 {
-                    Debug.WriteLine("Piece of the same color on the spot");
-                    return false;
+                    return true;
+                }
+                
+                else if (end != null) {
+                    if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                        {
+                            Debug.WriteLine("Piece of the same color on the spot");
+                            return false;
+                        }
                 }
 
                 if (board.isKingInCheck(isWhite()))
@@ -177,8 +186,10 @@ namespace ChessGame
                 int startPoint = isWhite() ? 6 : 1;
 
 
-                if ((start.GetRow() != startPoint && row == 2) ||
-                    (row != 1 || column != 0) ||
+                //Rewrite this to verify that it makes sense 
+                //figure out how to fix end so that it isn't just null 
+                if ((start.GetColumn() != startPoint && column == 2) ||
+                    (row != 0 || column != 1) ||
                     (!enPassant()) ||
                     !canPawnAttack(board, start, end))
                 {

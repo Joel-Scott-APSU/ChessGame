@@ -336,6 +336,14 @@ namespace ChessGame
                 createPieces(new Piece.Pawn(false), 1, i, blackPlayer);
             }
 
+            for(int i = 2; i < 5; i++)
+            {
+                for(int j = 0; j < 8; j++)
+                {
+                    boxes[i][j] = new Spot(i, j, null);
+                }
+            }
+
             string whitePieces = $"CurrentPieces: {string.Join(", ", whitePlayer.getPieces())}";
             string blackPieces = $"CurrentBlackPieces: {string.Join(", ", blackPlayer.getPieces())}";
            

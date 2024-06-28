@@ -35,6 +35,7 @@ namespace ChessGame
             int fromColumn = fromSquare.column;
             int toRow = toSquare.row;
             int toColumn = toSquare.column;
+            Piece capturedPiece = null;
 
             string whitePieces = $"CurrentPieces: {string.Join(", ", currentTurn.getPieces())}";
             Trace.WriteLine(whitePieces);
@@ -53,7 +54,11 @@ namespace ChessGame
 
             if (movingPiece.legalMove(board, start, end))  //if the selected pieces move is legal
             {
-                Piece capturedPiece = end.GetPiece(); //piece that is attempting to be captured
+                if (end != null)
+                {
+                    capturedPiece = end.GetPiece(); //piece that is attempting to be captured
+                }
+
 
                 if (capturedPiece != null && capturedPiece.isWhite != movingPiece.isWhite) // check if the piece exists and if it is the opposite color of the selected piece 
                 {
@@ -69,9 +74,16 @@ namespace ChessGame
                     }
                 }
 
-                end.SetPiece(movingPiece); // sets the end point of the moving piece to the square it moved to 
-                start.SetPiece(null); //sets the start point of the piece that moved to null 
+                if (end == null)
+                {
+                    end = new Spot(toRow, toColumn, start.GetPiece()); // sets the end point of the moving piece to the square it moved to 
+                    start.SetPiece(null); //sets the start point of the piece that moved to null 
+                    currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;
+                    return true;
+                }
 
+                end.SetPiece(movingPiece);
+                start.SetPiece(null);
                 currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;  //changes the players turn to the opposite color  
 
                 return true;
