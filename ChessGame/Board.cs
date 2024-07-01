@@ -23,7 +23,7 @@ namespace ChessGame
                 boxes[i] = new Spot[8];
                 for (int j = 0; j < 8; j++)
                 {
-                    boxes[i][j] = null; // Initialize all spots as null
+                    boxes[i][j] = new Spot(i, j, null); // Initialize all spots as null
                 }
             }
 
@@ -60,46 +60,54 @@ namespace ChessGame
                 return;
             }
 
-            Spot position = null;
-            for (int i = 0; i < 8; i++)
+            try
             {
-                for (int j = 0; j < 8; j++)
+                Spot position = null;
+                for (int i = 0; i < 8; i++)
                 {
-                    if (boxes[i][j]?.GetPiece() == piece)
+                    for (int j = 0; j < 8; j++)
                     {
-                        position = boxes[i][j];
-                        break;
+                        if (boxes[i][j]?.GetPiece() == piece)
+                        {
+                            position = boxes[i][j];
+                            break;
+                        }
                     }
+                    if (position != null) break;
                 }
-                if (position != null) break;
-            }
 
-            if (position == null)
+                if (position == null)
+                {
+                    throw new InvalidOperationException("Piece not found on the board");
+                }
+
+                int row = position.GetRow();
+                int col = position.GetColumn();
+
+                switch (piece.type)
+                {
+                    case Piece.PieceType.Pawn:
+                        markPawnThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Rook:
+                        markRookThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Bishop:
+                        markBishopThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Queen:
+                        markQueenThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Knight:
+                        MarkKnightThreats(piece, row, col);
+                        break;
+                }
+            }
+            catch (InvalidOperationException e)
             {
-                throw new InvalidOperationException("Piece not found on the board");
+                Debug.WriteLine($"{e}");
             }
-
-            int row = position.GetRow();
-            int col = position.GetColumn();
-
-            switch (piece.type)
-            {
-                case Piece.PieceType.Pawn:
-                    markPawnThreats(piece, row, col);
-                    break;
-                case Piece.PieceType.Rook:
-                    markRookThreats(piece, row, col);
-                    break;
-                case Piece.PieceType.Bishop:
-                    markBishopThreats(piece, row, col);
-                    break;
-                case Piece.PieceType.Queen:
-                    markQueenThreats(piece, row, col);
-                    break;
-                case Piece.PieceType.Knight:
-                    MarkKnightThreats(piece, row, col);
-                    break;
-            }
+        
         }
 
         private void markPawnThreats(Piece pawn, int row, int col)
@@ -343,13 +351,6 @@ namespace ChessGame
                     boxes[i][j] = new Spot(i, j, null);
                 }
             }
-
-            string whitePieces = $"CurrentPieces: {string.Join(", ", whitePlayer.getPieces())}";
-            string blackPieces = $"CurrentBlackPieces: {string.Join(", ", blackPlayer.getPieces())}";
-           
-            Debug.WriteLine(whitePieces);
-            Debug.WriteLine(blackPieces);
-
         }
 
         public void createPieces(Piece piece, int row, int col, Player player)

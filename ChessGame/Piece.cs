@@ -161,17 +161,10 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                if (end == null)
+                if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
-                    return true;
-                }
-                
-                else if (end != null) {
-                    if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
-                        {
-                            Debug.WriteLine("Piece of the same color on the spot");
-                            return false;
-                        }
+                    Debug.WriteLine("Piece of the same color on the spot");
+                    return false;
                 }
 
                 if (board.isKingInCheck(isWhite()))
@@ -180,27 +173,56 @@ namespace ChessGame
                     return false;
                 }
 
-                int row = Math.Abs(start.GetRow() - end.GetRow());
-                int column = Math.Abs(start.GetColumn() - end.GetColumn());
+                int rowDifference = end.GetRow() - start.GetRow();
+                int columnDifference = Math.Abs(start.GetColumn() - end.GetColumn());
 
-                int startPoint = isWhite() ? 6 : 1;
-
-
-                //Rewrite this to verify that it makes sense 
-                //figure out how to fix end so that it isn't just null 
-                if ((start.GetColumn() != startPoint && column == 2) ||
-                    (row != 0 || column != 1) ||
-                    (!enPassant()) ||
-                    !canPawnAttack(board, start, end))
+                // White pawn moves
+                if (isWhite())
                 {
-                    Debug.WriteLine("Pawn tries to move too much, is not enPassant, cannot attack, or the movement was not moving rows but columns");
-                    return false;
+                    // Forward move by 1
+                    if (rowDifference == -1 && columnDifference == 0 && end.GetPiece() == null)
+                    {
+                        return true;
+                    }
+                    // Forward move by 2 from the starting position
+                    if (start.GetRow() == 6 && rowDifference == -2 && columnDifference == 0 && end.GetPiece() == null)
+                    {
+                        return true;
+                    }
+                    // Capture move
+                    if (rowDifference == -1 && columnDifference == 1 && end.GetPiece() != null && !end.GetPiece().isWhite())
+                    {
+                        return true;
+                    }
                 }
 
-                return true;
-            }
+                // Black pawn moves
+                else
+                {
+                    // Forward move by 1
+                    if (rowDifference == 1 && columnDifference == 0 && end.GetPiece() == null)
+                    {
+                        return true;
+                    }
+                    // Forward move by 2 from the starting position
+                    if (start.GetRow() == 1 && rowDifference == 2 && columnDifference == 0 && end.GetPiece() == null)
+                    {
+                        return true;
+                    }
+                    // Capture move
+                    if (rowDifference == 1 && columnDifference == 1 && end.GetPiece() != null && end.GetPiece().isWhite())
+                    {
+                        return true;
+                    }
+                }
 
-            public bool enPassant()
+                Debug.WriteLine("Illegal pawn move");
+                return false;
+            }
+        
+
+
+        public bool enPassant()
             {
                 return true;
             }
@@ -262,6 +284,7 @@ namespace ChessGame
                 int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
                 int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
+                Debug.WriteLine($"movement X: {movementDirectionX}, Y: {movementDirectionY}");
                 if (movementDirectionX != 0 && movementDirectionY != 0)
                 {
                     return false;
@@ -269,6 +292,7 @@ namespace ChessGame
 
                 int currentX = startRow + movementDirectionX;
                 int currentY = startColumn + movementDirectionY;
+                Debug.WriteLine($"Current X: {currentX}, Current Y: {currentY}");
 
                 while (currentX != endRow || currentY != endColumn)
                 {
@@ -288,17 +312,20 @@ namespace ChessGame
 
         public class Knight : Piece
         {
-            public Knight(bool white) : base(white) {
+            public Knight(bool white) : base(white)
+            {
                 this.type = PieceType.Knight;
-                    }
+            }
 
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-
-                if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                if (end != null)
                 {
-                    return false;
+                    if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                    {
+                        return false;
+                    }
                 }
 
                 if (board.isKingInCheck(isWhite()))
@@ -322,7 +349,8 @@ namespace ChessGame
 
         public class Bishop : Piece
         {
-            public Bishop(bool white) : base(white) {
+            public Bishop(bool white) : base(white)
+            {
                 this.type = PieceType.Bishop;
             }
 
@@ -387,7 +415,8 @@ namespace ChessGame
 
         public class Queen : Piece
         {
-            public Queen(bool white) : base(white) {
+            public Queen(bool white) : base(white)
+            {
                 this.type = PieceType.Queen;
             }
 

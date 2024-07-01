@@ -30,17 +30,14 @@ namespace ChessGame
         {
             return pieces;
         }
+
+        public bool IsWhite
+        {
+            get { return isWhite; }
+        }
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"{(isWhite ? "White Player" : "Black Player")} Pieces:");
-
-            foreach (Piece piece in pieces)
-            {
-                sb.AppendLine(piece.ToString());
-            }
-
-            return sb.ToString();
+            return isWhite ? "White Player" : "Black Player";
         }
     }
 }

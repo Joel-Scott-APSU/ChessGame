@@ -8,7 +8,7 @@ namespace ChessGame
         private int row;    // Rename 'y' to 'row' to represent the row index
         private Piece piece;
 
-        public Spot(int column, int row, Piece piece)
+        public Spot(int row, int column, Piece piece)
         {
             this.column = column;
             this.row = row;
@@ -27,7 +27,7 @@ namespace ChessGame
         public override string ToString()
         {
             string pieceString = piece != null ? piece.ToString() : "Empty";
-            return $"Spot [Column={column}, Row={row}, Piece={pieceString}]";
+            return $"Spot [Row={row}, Column={column}, Piece={pieceString}]";
         }
     }
 }
