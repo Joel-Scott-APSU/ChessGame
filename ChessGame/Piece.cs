@@ -250,10 +250,10 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                int startRow = start.GetColumn();
-                int startColumn = start.GetRow();
-                int endRow = end.GetColumn();
-                int endColumn = end.GetRow();
+                int startRow = start.GetRow();
+                int startColumn = start.GetColumn();
+                int endRow = end.GetRow();
+                int endColumn = end.GetColumn();
 
                 //spot is occupied by a piece of the same color 
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
@@ -278,31 +278,39 @@ namespace ChessGame
 
                 return true;
             }
-
+            
             public static bool legalRookMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
-                int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
-                int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
+                int RowMovement = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
+                int ColumnMovement = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
-                Debug.WriteLine($"movement X: {movementDirectionX}, Y: {movementDirectionY}");
-                if (movementDirectionX != 0 && movementDirectionY != 0)
+                Debug.WriteLine($"Row Movement: {RowMovement}, Column Movement: {ColumnMovement}");
+                if (RowMovement != 0 && ColumnMovement != 0)
                 {
                     return false;
                 }
 
-                int currentX = startRow + movementDirectionX;
-                int currentY = startColumn + movementDirectionY;
-                Debug.WriteLine($"Current X: {currentX}, Current Y: {currentY}");
+                int currentRow = startRow + RowMovement;
+                int currentColumn = startColumn + ColumnMovement;
 
-                while (currentX != endRow || currentY != endColumn)
+                try
                 {
-                    if (board.getSpot(currentX, currentY).GetPiece() != null)
+                    while (currentRow != endRow || currentColumn != endColumn)
                     {
-                        return false;
-                    }
+                        Debug.WriteLine($"End Row: {endRow} End Column: {endColumn}");
+                        Debug.WriteLine($"Current Row: {currentRow}, Current Column: {currentColumn}");
 
-                    currentX += movementDirectionX;
-                    currentY += movementDirectionY;
+                        if (board.getSpot(currentRow, currentColumn).GetPiece() != null)
+                        {
+                            return false;
+                        }
+
+                        currentRow += RowMovement;
+                        currentColumn += ColumnMovement;
+                    }
+                }catch(ArgumentOutOfRangeException e)
+                {
+                    Debug.WriteLine(e);
                 }
 
                 return true;

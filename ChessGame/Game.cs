@@ -37,6 +37,7 @@ namespace ChessGame
             int toColumn = toSquare.column;
             Piece capturedPiece = null;
 
+            Debug.WriteLine($"from square color: {fromSquare.isWhiteSquare}");
             Debug.WriteLine($"Current Player {currentTurn}\n");
 
             Spot start = board.getSpot(fromRow, fromColumn);  // Starting point on the board for the selected piece

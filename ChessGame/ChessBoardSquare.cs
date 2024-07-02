@@ -13,6 +13,7 @@ namespace ChessGame
         public int row { get; set; }
         public int column { get; set; }
         public VisualBrush Background { get; set; }
+        public bool isWhiteSquare { get; set; } // Added property
 
         public ImageSource PieceImage
         {
