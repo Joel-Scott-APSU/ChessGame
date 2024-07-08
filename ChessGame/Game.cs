@@ -31,20 +31,29 @@ namespace ChessGame
 
         public bool movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
+            Piece piece;
+
             int fromRow = fromSquare.row;
             int fromColumn = fromSquare.column;
             int toRow = toSquare.row;
             int toColumn = toSquare.column;
             Piece capturedPiece = null;
 
-            Debug.WriteLine($"Current Player {currentTurn}\n");
 
             Spot start = board.getSpot(fromRow, fromColumn);  // Starting point on the board for the selected piece
             Spot end = board.getSpot(toRow, toColumn); // Ending point where selected piece is trying to move 
-            Trace.WriteLine($"Start: {start} End: {end}");
 
             Piece movingPiece = start.GetPiece();  // Piece that is currently attempting to move 
+            
+            Trace.WriteLine($"Start: {start} End: {end}");
+            Debug.WriteLine($"Current Player {currentTurn}\n");
             Trace.WriteLine($"Legal Move {movingPiece.legalMove(board, start, end)}");
+
+            if (board.isKingInCheck(movingPiece.isWhite()))
+            {
+                Debug.WriteLine("King is in check");
+                return false;
+            }
 
             if(movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {

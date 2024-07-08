@@ -32,6 +32,28 @@ namespace ChessGame
             resetBoard();
         }
 
+        public bool isMoveValid(Spot start,  Spot end, bool isWhite)
+        {
+            //saves the original pieces to move them back after the simulation 
+            Piece originalStartPiece = start.GetPiece();
+            Piece originalEndPiece = end.GetPiece();
+
+            //moves the pieces to simulate the movement and check if the king is in check 
+            end.SetPiece(originalStartPiece);
+            start.SetPiece(null);
+
+            //check if the move puts the king in check
+            bool kingInCheck = isKingInCheck(isWhite);
+
+            Debug.WriteLine($"Is King in Check: {kingInCheck}");
+
+            //reverts the pieces back to their original position
+            start.SetPiece(originalStartPiece);
+            end.SetPiece(originalEndPiece);
+
+            return !kingInCheck;
+        }
+
         public void updateThreatMap(List<Piece> opponentPieces)
         {
             ClearThreatMap();
@@ -51,6 +73,22 @@ namespace ChessGame
                     threatMap[row, col] = false;
                 }
             }
+        }
+        
+        public bool simulateMove(Spot start, Spot end, bool isWhite)
+        {
+            Piece originalStartPiece = start.GetPiece();
+            Piece originalEndPiece = end.GetPiece();
+
+            end.SetPiece(originalStartPiece);
+            start.SetPiece(null);
+
+            bool kingInCheck = isKingInCheck(isWhite);
+
+            start.SetPiece(originalStartPiece);
+            end.SetPiece(originalEndPiece);
+
+            return !kingInCheck;
         }
 
         private void MarkThreats(Piece piece)
@@ -81,8 +119,8 @@ namespace ChessGame
                     throw new InvalidOperationException("Piece not found on the board");
                 }
 
-                int row = position.GetRow();
-                int col = position.GetColumn();
+                int row = position.GetColumn();
+                int col = position.GetRow();
 
                 switch (piece.type)
                 {
@@ -169,7 +207,7 @@ namespace ChessGame
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
                     Spot spot = getSpot(newRow, newColumn);
-
+                    Debug.WriteLine($"Spot on threat map: {spot}");
                     if (spot != null)
                     {
                         threatMap[newRow, newColumn] = true;
@@ -261,12 +299,12 @@ namespace ChessGame
 
         public bool isKingInCheck(bool isWhite)
         {
-            Spot Kingspot = findKing(isWhite);
+            Spot kingSpot = findKing(isWhite);
 
             List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
             updateThreatMap(opponentPieces);
 
-            return threatMap[Kingspot.GetRow(), Kingspot.GetColumn()];
+            return threatMap[kingSpot.GetRow(), kingSpot.GetColumn()];
         }
 
         public bool isSquareUnderThreat(bool isWhite, int row, int col)
