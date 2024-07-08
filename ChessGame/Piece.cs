@@ -283,27 +283,22 @@ namespace ChessGame
 
                 return true;
             }
-
+            
             public static bool legalRookMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
-                //determines the movement direction of the rook
                 int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
                 int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
                 Debug.WriteLine($"movement X: {movementDirectionX}, Y: {movementDirectionY}");
-                //verifies that either the x or y direction is equal to 0
                 if (movementDirectionX != 0 && movementDirectionY != 0)
                 {
                     return false;
                 }
 
-                //gets the next square in the movement direction
                 int currentX = startRow + movementDirectionX;
                 int currentY = startColumn + movementDirectionY;
                 Debug.WriteLine($"Current X: {currentX}, Current Y: {currentY}");
 
-                //goes square by square in the movement direction to verify there are no pieces on any square in the pathway
-                //goes through every square until the ending square is reached 
                 while (currentX != endRow || currentY != endColumn)
                 {
                     if (board.getSpot(currentX, currentY).GetPiece() != null)
@@ -311,7 +306,6 @@ namespace ChessGame
                         return false;
                     }
 
-                    //increments the movement direction to search the next square
                     currentX += movementDirectionX;
                     currentY += movementDirectionY;
                 }

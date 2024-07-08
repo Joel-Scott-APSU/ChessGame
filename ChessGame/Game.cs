@@ -39,6 +39,11 @@ namespace ChessGame
             int toColumn = toSquare.column;
             Piece capturedPiece = null;
 
+<<<<<<< HEAD
+=======
+            Debug.WriteLine($"from square color: {fromSquare.isWhiteSquare}");
+            Debug.WriteLine($"Current Player {currentTurn}\n");
+>>>>>>> 2e02dfa0cb94bbd293047ceb66c0b767ebbc38eb
 
             Spot start = board.getSpot(fromRow, fromColumn);  // Starting point on the board for the selected piece
             Spot end = board.getSpot(toRow, toColumn); // Ending point where selected piece is trying to move 

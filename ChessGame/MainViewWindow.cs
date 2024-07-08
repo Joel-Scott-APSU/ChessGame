@@ -16,15 +16,16 @@ namespace ChessGame
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ObservableCollection<ChessBoardSquare> ChessBoardSquares { get; set; }
-
+        
         private ChessBoardSquare selectedSquare;
-
         private Game game;
+
         public MainWindowViewModel()
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
             game = new Game();
+            InitializeChessBoardNumbers();
         }
 
         private void InitializeChessBoard()
@@ -36,15 +37,16 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
-                    var square = new ChessBoardSquare
-                    {
-                        row = i,
-                        column = j,
-                        Background = new VisualBrush
+                        var square = new ChessBoardSquare
                         {
-                            Visual = new Grid
+                            row = i,
+                            column = j,
+                            isWhiteSquare = isWhiteSquare, // Set the property here
+                            Background = new VisualBrush
                             {
-                                Children =
+                                Visual = new Grid
+                                {
+                                    Children =
                                 {
                                     new Image
                                     {
@@ -54,22 +56,27 @@ namespace ChessGame
                                     new Rectangle
                                     {
                                         Fill = (isWhiteSquare ? Brushes.White : darkSquareBrush),
-                                        Opacity = 0.5
+                                        Opacity = 0.5,
                                     }
                                 }
-                            }
-                        },
-                        PieceImage = GetInitialPieceImage(i, j)
-                    };
+                                }
+                            },
+                            PieceImage = GetInitialPieceImage(i, j)
+                        };
 
-                    ChessBoardSquares.Add(square);
+                        ChessBoardSquares.Add(square);
 
-                    isWhiteSquare = !isWhiteSquare; // Toggle the color for the next square
-                }
+                        isWhiteSquare = !isWhiteSquare; // Toggle the color for the next square
+                    }
 
-                // Toggle the color for the start of the next row
-                isWhiteSquare = !isWhiteSquare;
+                    // Toggle the color for the start of the next row
+                    isWhiteSquare = !isWhiteSquare;            
             }
+        }
+
+        private void InitializeChessBoardNumbers()
+        {
+
         }
 
         private ImageSource GetInitialPieceImage(int row, int col)
@@ -150,7 +157,6 @@ namespace ChessGame
                 selectedSquare = null;
             }
         }
-
 
         private void MovePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
