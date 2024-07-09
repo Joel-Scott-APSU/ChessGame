@@ -39,29 +39,20 @@ namespace ChessGame
             int toColumn = toSquare.column;
             Piece capturedPiece = null;
 
-<<<<<<< HEAD
-=======
-            Debug.WriteLine($"from square color: {fromSquare.isWhiteSquare}");
-            Debug.WriteLine($"Current Player {currentTurn}\n");
->>>>>>> 2e02dfa0cb94bbd293047ceb66c0b767ebbc38eb
 
             Spot start = board.getSpot(fromRow, fromColumn);  // Starting point on the board for the selected piece
             Spot end = board.getSpot(toRow, toColumn); // Ending point where selected piece is trying to move 
 
             Piece movingPiece = start.GetPiece();  // Piece that is currently attempting to move 
             
-            Trace.WriteLine($"Start: {start} End: {end}");
-            Debug.WriteLine($"Current Player {currentTurn}\n");
-            Trace.WriteLine($"Legal Move {movingPiece.legalMove(board, start, end)}");
-
-            if (board.isKingInCheck(movingPiece.isWhite()))
+            if(movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
-                Debug.WriteLine("King is in check");
                 return false;
             }
 
-            if(movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
+            if(!board.isMoveValid(start, end, movingPiece.isWhite()))
             {
+                Debug.WriteLine("Move will put king into check");
                 return false;
             }
 
@@ -88,7 +79,13 @@ namespace ChessGame
 
                 end.SetPiece(movingPiece);
                 start.SetPiece(null);
+
+                board.updateThreatMap(currentTurn.getPieces());
+
                 currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;  // Change the player's turn to the opposite color  
+
+
+                Debug.WriteLine($"\nCurrent Player {currentTurn}\n");
 
                 return true;
             }

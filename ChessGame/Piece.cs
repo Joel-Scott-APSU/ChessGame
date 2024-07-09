@@ -170,6 +170,14 @@ namespace ChessGame
                 int rowDifference = end.GetRow() - start.GetRow();
                 int columnDifference = Math.Abs(start.GetColumn() - end.GetColumn());
 
+                if (board.isKingInCheck(isWhite()))
+                {
+                    if (!board.isMoveValid(start, end, isWhite()))
+                    {
+                        return false;
+                    }
+                }
+
                 // White pawn moves
                 if (isWhite())
                 {
@@ -275,6 +283,14 @@ namespace ChessGame
                     return false;
                 }
 
+                if (board.isKingInCheck(isWhite()))
+                {
+                    if(!board.isMoveValid(start, end, isWhite()))
+                    {
+                        return false; 
+                    }
+                }
+
                 //if the rook has not moved, set the has moved condition to true 
                 if (hasMoved == false)
                 {
@@ -342,6 +358,14 @@ namespace ChessGame
                     return false;
                 }
 
+                if (board.isKingInCheck(isWhite()))
+                {
+                    if (!board.isMoveValid(start, end, isWhite()))
+                    {
+                        return false;
+                    }
+                }
+
 
                 return true;
             }
@@ -380,6 +404,14 @@ namespace ChessGame
                 if (!legalBishopMove(board, startRow, startColumn, endRow, endColumn))
                 {
                     return false;
+                }
+
+                if (board.isKingInCheck(isWhite()))
+                {
+                    if (!board.isMoveValid(start, end, isWhite()))
+                    {
+                        return false;
+                    }
                 }
 
                 return true;
@@ -442,16 +474,18 @@ namespace ChessGame
                     return false;
                 }
 
-
-                if(!board.isMoveValid(start, end, isWhite()))
-                {
-                    return false;
-                }
-
                 //checks to see if the move is either a legal rook move or a legal bishop move 
                 if (!Rook.legalRookMove(board, startRow, startColumn, endRow, endColumn) && !Bishop.legalBishopMove(board, startRow, startColumn, endRow, endColumn))
                 {
                     return false;
+                }
+
+                if (board.isKingInCheck(isWhite()))
+                {
+                    if (!board.isMoveValid(start, end, isWhite()))
+                    {
+                        return false;
+                    }
                 }
 
                 return true;

@@ -41,6 +41,10 @@ namespace ChessGame
             }
         }
 
+        private void ResetGame_Click(object sender, RoutedEventArgs e) 
+        {
+            DataContext = new MainWindowViewModel();
+        }
 
     }
 }

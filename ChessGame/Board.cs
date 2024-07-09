@@ -74,96 +74,79 @@ namespace ChessGame
                 }
             }
         }
-        
-        public bool simulateMove(Spot start, Spot end, bool isWhite)
+
+private void MarkThreats(Piece piece)
+{
+    if (piece.isTaken())
+    {
+        return;
+    }
+
+    try
+    {
+        Spot position = null;
+        for (int i = 0; i < 8; i++)
         {
-            Piece originalStartPiece = start.GetPiece();
-            Piece originalEndPiece = end.GetPiece();
-
-            end.SetPiece(originalStartPiece);
-            start.SetPiece(null);
-
-            bool kingInCheck = isKingInCheck(isWhite);
-
-            start.SetPiece(originalStartPiece);
-            end.SetPiece(originalEndPiece);
-
-            return !kingInCheck;
+            for (int j = 0; j < 8; j++)
+            {
+                if (boxes[i][j]?.GetPiece() == piece)
+                {
+                    position = boxes[i][j];
+                    break;
+                }
+            }
+            if (position != null) break;
         }
 
-        private void MarkThreats(Piece piece)
+        if (position == null)
         {
-            if (piece.isTaken())
-            {
-                return;
-            }
-
-            try
-            {
-                Spot position = null;
-                for (int i = 0; i < 8; i++)
-                {
-                    for (int j = 0; j < 8; j++)
-                    {
-                        if (boxes[i][j]?.GetPiece() == piece)
-                        {
-                            position = boxes[i][j];
-                            break;
-                        }
-                    }
-                    if (position != null) break;
-                }
-
-                if (position == null)
-                {
-                    throw new InvalidOperationException("Piece not found on the board");
-                }
-
-                int row = position.GetColumn();
-                int col = position.GetRow();
-
-                switch (piece.type)
-                {
-                    case Piece.PieceType.Pawn:
-                        markPawnThreats(piece, row, col);
-                        break;
-                    case Piece.PieceType.Rook:
-                        markRookThreats(piece, row, col);
-                        break;
-                    case Piece.PieceType.Bishop:
-                        markBishopThreats(piece, row, col);
-                        break;
-                    case Piece.PieceType.Queen:
-                        markQueenThreats(piece, row, col);
-                        break;
-                    case Piece.PieceType.Knight:
-                        MarkKnightThreats(piece, row, col);
-                        break;
-                }
-            }
-            catch (InvalidOperationException e)
-            {
-                Debug.WriteLine($"{e}");
-            }
-        
+            throw new InvalidOperationException("Piece not found on the board");
         }
 
-        private void markPawnThreats(Piece pawn, int row, int col)
-        {
-            int direction = pawn.isWhite() ? 1 : -1;
+        int row = position.GetRow(); // Corrected row assignment
+        int col = position.GetColumn(); // Corrected column assignment
 
-            if (row + direction >= 0 && row + direction < 8)
-            {
-                if (col - 1 >= 0)
-                {
-                    threatMap[row + direction, col - 1] = true;
-                }
-                if (col + 1 < 8)
-                {
-                    threatMap[row + direction, col + 1] = true;
-                }
-            }
+        switch (piece.type)
+        {
+            case Piece.PieceType.Pawn:
+                markPawnThreats(piece, row, col);
+                break;
+            case Piece.PieceType.Rook:
+                markRookThreats(piece, row, col);
+                break;
+            case Piece.PieceType.Bishop:
+                markBishopThreats(piece, row, col);
+                break;
+            case Piece.PieceType.Queen:
+                markQueenThreats(piece, row, col);
+                break;
+            case Piece.PieceType.Knight:
+                MarkKnightThreats(piece, row, col);
+                break;
         }
+    }
+    catch (InvalidOperationException e)
+    {
+        Debug.WriteLine($"{e}");
+    }
+}
+
+private void markPawnThreats(Piece pawn, int row, int col)
+{
+    int direction = pawn.isWhite() ? -1 : 1; // Pawns move in opposite directions based on color
+
+    if (row + direction >= 0 && row + direction < 8)
+    {
+        if (col - 1 >= 0)
+        {
+            threatMap[row + direction, col - 1] = true;
+        }
+        if (col + 1 < 8)
+        {
+            threatMap[row + direction, col + 1] = true;
+        }
+    }
+}
 
         private void markRookThreats(Piece rook, int row, int col)
         {
@@ -207,9 +190,9 @@ namespace ChessGame
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
                     Spot spot = getSpot(newRow, newColumn);
-                    Debug.WriteLine($"Spot on threat map: {spot}");
-                    if (spot != null)
+                    if (spot != null && spot.GetPiece() == Knight)
                     {
+                        Debug.WriteLine($"Spot on threat map: {spot}");
                         threatMap[newRow, newColumn] = true;
                     }
                 }
@@ -317,8 +300,6 @@ namespace ChessGame
 
         private Spot findKing(bool isWhite)
         {
-            Player player = isWhite ? whitePlayer : blackPlayer;
-
             foreach (Spot[] row in boxes)
             {
                 foreach (Spot spot in row)
@@ -330,7 +311,7 @@ namespace ChessGame
                 }
             }
 
-            return null;
+            throw new InvalidOperationException("King not found on the board");
         }
 
         public Spot getSpot(int row, int col)
