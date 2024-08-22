@@ -16,12 +16,14 @@ namespace ChessGame
     {
         private bool taken = false;
         private bool white = false;
-
+        private Spot currentPosition;
         private ChessBoardSquare selectedSquare;
 
         public Piece(bool white)
         {
             this.setWhite(white);
+            this.type = type;
+            this.currentPosition = null;
         }
 
         public bool isWhite() { return this.white; }
@@ -31,6 +33,10 @@ namespace ChessGame
         public bool isTaken() { return this.taken; }
 
         public void setTaken(bool taken) { this.taken = taken; }
+
+        public Spot getCurrentPosition() { return currentPosition; }
+
+        public void setCurrentPosition(Spot position) { this.currentPosition = position; }
 
         public abstract bool legalMove(Board board, Spot start, Spot end);
 

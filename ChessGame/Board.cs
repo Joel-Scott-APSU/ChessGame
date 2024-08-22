@@ -186,14 +186,19 @@ private void markPawnThreats(Piece pawn, int row, int col)
             {
                 int newRow = row + rows[i];
                 int newColumn = col + columns[i];
+                Debug.WriteLine($"\nCurrent Piece: {Knight}");
 
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
                     Spot spot = getSpot(newRow, newColumn);
-                    if (spot != null && spot.GetPiece() == Knight)
+                    if (spot.GetPiece() != null) 
                     {
-                        Debug.WriteLine($"Spot on threat map: {spot}");
-                        threatMap[newRow, newColumn] = true;
+                        Debug.WriteLine($"Knight Check {spot.GetPiece()}");
+                        if (spot.GetPiece().type == Piece.PieceType.King)
+                        {
+                            Debug.WriteLine($"Spot on threat map from knight: {spot}");
+                            threatMap[newRow, newColumn] = true;
+                        }
                     }
                 }
             }
@@ -377,6 +382,24 @@ private void markPawnThreats(Piece pawn, int row, int col)
 
             boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
+        }
+
+        public void clearBoard()
+        {
+            for(int i = 0; i < 8; i++)
+            {
+                for(int j = 0; j < 8; j++)
+                {
+                    boxes[i][j] = new Spot(i, j, null);
+                }
+            }
+        }
+
+        public void placePiece(Piece piece, string position)
+        {
+            int row = 8 - int.Parse(position[1].ToString());
+            int col = position[0] - 'A';
+            boxes[row][col] = new Spot(row, col, piece);
         }
     }
 }

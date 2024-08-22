@@ -14,6 +14,7 @@ namespace ChessGame
         public Player blackPlayer { get; private set; }
         public Player currentTurn { get; private set; }
         public ChessBoardSquare selectedSquare { get; set; }
+        public Moves moves { get; private set; }
 
         public Game()
         {
@@ -26,7 +27,7 @@ namespace ChessGame
             blackPlayer = new Player(false);
             board = new Board(whitePlayer, blackPlayer);
             currentTurn = whitePlayer;
-
+            moves = new Moves(whitePlayer, blackPlayer);
         }
 
         public bool movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
@@ -82,6 +83,13 @@ namespace ChessGame
 
                 board.updateThreatMap(currentTurn.getPieces());
 
+                if (board.isKingInCheck(currentTurn.IsWhite)){
+                    Debug.WriteLine($"King is in Check, running checkForLegalMoves function");
+                    if (!moves.checkForLegalMoves(currentTurn.IsWhite, board))
+                    {
+                        Debug.WriteLine("CHECKMATE");
+                    }
+                }
                 currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;  // Change the player's turn to the opposite color  
 
 
@@ -92,5 +100,9 @@ namespace ChessGame
             return false;
         }
 
+        private bool DrawScenarios()
+        {
+            return false;
+        }
     }
 }
