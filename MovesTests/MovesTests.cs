@@ -18,6 +18,10 @@ namespace ChessGame.Tests
             blackPlayer = new Player(false);
         }
         [TestMethod]
+        /*Checking to see if any moves exists that will get the king out 
+         * of this spot, using black king for piece that should be in checkmate,
+         * checking using white king and queen
+         */
         public void TestCheckMateScenario1()
         {
             Piece blackKing = new Piece.King(false);
@@ -39,6 +43,7 @@ namespace ChessGame.Tests
         }
 
         [TestMethod]
+        //checkmate scenario 2 uses a rook and a king to put the king into checkmate 
         public void TestCheckMateScenario2()
         {
             Piece blackKing = new Piece.King(false);
@@ -60,6 +65,7 @@ namespace ChessGame.Tests
         }
 
         [TestMethod]
+        //checkmate scenario uses a knight, a bishop, and a king, king should be in checkmate 
         public void TestCheckMateScenario3()
         {
             Piece blackKing = new Piece.King(false);
@@ -84,6 +90,7 @@ namespace ChessGame.Tests
         }
 
         [TestMethod]
+        //checkmate scenario 4 uses 2 queens and a king 
         public void TestCheckMateScenario4()
         {
             Piece blackKing = new Piece.King(false);
@@ -108,6 +115,7 @@ namespace ChessGame.Tests
         }
 
         [TestMethod]
+        //checkmate scenario 5 uses a queen, rook, and king 
         public void TestCheckMateScenario5()
         {
             Piece blackKing = new Piece.King(false);
@@ -132,6 +140,7 @@ namespace ChessGame.Tests
         }
 
         [TestMethod]
+        //checkmate scenario 6 uses a bishop, pawn, and a king 
         public void TestCheckMateScenario6()
         {
             Piece blackKing = new Piece.King(false);

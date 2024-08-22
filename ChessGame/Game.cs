@@ -99,10 +99,5 @@ namespace ChessGame
             }
             return false;
         }
-
-        private bool DrawScenarios()
-        {
-            return false;
-        }
     }
 }

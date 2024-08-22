@@ -382,6 +382,8 @@ private void markPawnThreats(Piece pawn, int row, int col)
 
             boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
+            Spot currentPosition = boxes[row][col];
+            piece.setCurrentPosition(currentPosition);
         }
 
         public void clearBoard()
@@ -393,13 +395,46 @@ private void markPawnThreats(Piece pawn, int row, int col)
                     boxes[i][j] = new Spot(i, j, null);
                 }
             }
+
+            emptyPieces(whitePlayer.getPieces());
+            emptyPieces(blackPlayer.getPieces());
         }
 
         public void placePiece(Piece piece, string position)
         {
-            int row = 8 - int.Parse(position[1].ToString());
-            int col = position[0] - 'A';
+            if (string.IsNullOrEmpty(position) || position.Length != 2)
+            {
+                throw new ArgumentException("Position must be a valid two-character string (e.g., 'E2').");
+            }
+
+            char columnChar = position[0];
+            char rowChar = position[1];
+
+            // Validate column and row
+            if (columnChar < 'A' || columnChar > 'H' || rowChar < '1' || rowChar > '8')
+            {
+                throw new ArgumentException("Position must be within the range A1 to H8.");
+            }
+
+            int row = 8 - int.Parse(rowChar.ToString()); // Convert '1'-'8' to 7-0
+            int col = columnChar - 'A'; // Convert 'A'-'H' to 0-7
+
+            if (row < 0 || row >= 8 || col < 0 || col >= 8)
+            {
+                throw new ArgumentOutOfRangeException("Row or column is out of board bounds.");
+            }
+
+            // Place the piece at the calculated position
             boxes[row][col] = new Spot(row, col, piece);
+        }
+
+
+        public void emptyPieces(List<Piece> pieces)
+        {
+            for(int i = 0; i < pieces.Count; i++)
+            {
+                pieces.RemoveAt(i);
+            }
         }
     }
 }
