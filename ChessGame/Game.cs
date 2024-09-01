@@ -40,10 +40,14 @@ namespace ChessGame
             int toColumn = toSquare.column;
             int enPassantRow = currentTurn.IsWhite ? toSquare.row + 1 : toSquare.row - 1;
             Piece capturedPiece = null;
+            Piece enPassantPiece = null;
 
             Spot start = board.getSpot(fromRow, fromColumn);
             Spot end = board.getSpot(toRow, toColumn);
-            Piece enPassantPiece = board.getSpot(enPassantRow, toColumn).GetPiece();
+            if (enPassantRow > 0 && enPassantRow < 7)
+            {
+                enPassantPiece = board.getSpot(enPassantRow, toColumn).GetPiece();
+            }
 
             Piece movingPiece = start.GetPiece();
 
@@ -129,26 +133,36 @@ namespace ChessGame
 
         public (Piece, bool) enPassantCapture(Piece enPassantPiece, Piece movingPiece, ChessBoardSquare toSquare, ChessBoardSquare fromSquare)
         {
+            // Ensure that the moving piece is a pawn
+            if (movingPiece is not Piece.Pawn movingPawn)
+            {
+                return (null, false);
+            }
+
             Piece capturedPiece = null;
             Spot end = board.getSpot(toSquare.row, toSquare.column);
+
+            Debug.WriteLine($"End Spot on board: {end}");
+            // Calculate enPassantRow with boundary check
             int enPassantRow = currentTurn.IsWhite ? toSquare.row + 1 : toSquare.row - 1;
-
-            Debug.WriteLine($"EnPassantPiece: {enPassantPiece} MovingPiece: {movingPiece}");
-
-            if (enPassantPiece != null)
+            Debug.WriteLine($"EnPassantRow: {enPassantRow}");
+            if (enPassantRow < 0 || enPassantRow > 7)
             {
-                Piece.Pawn enPassantPawn = enPassantPiece as Piece.Pawn;
-                if (enPassantPawn != null && enPassantPawn.isEnPassant)
-                {
-                    Spot enPassantSpot = board.getSpot(enPassantRow, toSquare.column);
-                    enPassantSpot.SetPiece(null);
-                    end.SetPiece(movingPiece);
-                    capturedPiece = enPassantPawn;
-                    return (capturedPiece, true);
-                }
+                return (null, false);
+            }
+
+            // Ensure that the en passant piece is also a pawn
+            if (enPassantPiece is Piece.Pawn enPassantPawn && enPassantPawn.isEnPassant)
+            {
+                Spot enPassantSpot = board.getSpot(enPassantRow, toSquare.column);
+                enPassantSpot.SetPiece(null);
+                end.SetPiece(movingPiece);
+                capturedPiece = enPassantPawn;
+                return (capturedPiece, true);
             }
 
             return (null, false);
         }
+
     }
 }
