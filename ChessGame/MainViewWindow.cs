@@ -37,10 +37,9 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
-                        var square = new ChessBoardSquare
+                        var square = new ChessBoardSquare(i,j)
                         {
-                            row = i,
-                            column = j,
+                            
                             isWhiteSquare = isWhiteSquare, // Set the property here
                             Background = new VisualBrush
                             {
@@ -131,7 +130,6 @@ namespace ChessGame
         {
             if (selectedSquare == null)
             {
-                // Select the square if it has a piece
                 if (square.PieceImage != null)
                 {
                     square.IsHighlighted = true;
@@ -140,23 +138,34 @@ namespace ChessGame
             }
             else
             {
-                // Attempt to move the piece if the clicked square is not the selected square
                 if (!square.IsHighlighted)
                 {
                     Debug.WriteLine($"Selected Square: {selectedSquare} Square: {square}");
-                    bool moveSuccessful = game.movePiece(selectedSquare, square);
-                    Debug.WriteLine($"MoveSuccessful: {moveSuccessful}");
+
+                    // Call movePiece and retrieve if move was successful and if en passant capture occurred
+                    (bool moveSuccessful, bool enPassantCapture) = game.movePiece(selectedSquare, square);
+
+                    Debug.WriteLine($"MoveSuccessful: {moveSuccessful}, EnPassantCapture: {enPassantCapture}");
+
                     if (moveSuccessful)
                     {
-                        MovePiece(selectedSquare, square);
+                        if (enPassantCapture)
+                        {
+                            MovePieceEnPassant(selectedSquare, square);
+                        }
+                        else
+                        {
+                            MovePiece(selectedSquare, square);
+                        }
                     }
                 }
 
-                // Reset highlighting and selected square
                 selectedSquare.IsHighlighted = false;
                 selectedSquare = null;
             }
         }
+
+
 
         private void MovePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
@@ -167,6 +176,44 @@ namespace ChessGame
             // Update UI after move
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
+
+        private void MovePieceEnPassant(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
+        {
+            Player player = game.currentTurn;
+
+            // Determine the direction based on the player's color
+            int direction = player.IsWhite ? -1 : 1; // Correct direction for en passant
+
+            // Calculate the row of the adjacent square for en passant
+            int enPassantRow = toSquare.row + direction;
+
+            // Use FindSquare to locate the en passant square
+            ChessBoardSquare enPassantSquare = FindSquare(enPassantRow, toSquare.column);
+            Debug.WriteLine($"En Passant Square: {enPassantSquare}");
+
+            // If the enPassantSquare is found, clear the piece image from it
+            if (enPassantSquare != null)
+            {
+                enPassantSquare.PieceImage = null; // This should clear the image from the UI
+            }
+
+            // Move the piece image to the toSquare
+            toSquare.PieceImage = fromSquare.PieceImage;
+            fromSquare.PieceImage = null;
+
+            // Notify that the ChessBoardSquares collection has changed, triggering a UI update
+            OnPropertyChanged(nameof(ChessBoardSquares));
+        }
+
+
+
+        // Helper method to find a ChessBoardSquare by its row and column
+        private ChessBoardSquare FindSquare(int row, int column)
+        {
+            // Search for the square in the ChessBoardSquares collection
+            return ChessBoardSquares.FirstOrDefault(square => square.row == row && square.column == column);
+        }
+
 
         protected void OnPropertyChanged(string name)
         {
