@@ -32,7 +32,7 @@ namespace ChessGame
             resetBoard();
         }
 
-        public bool isMoveValid(Spot start,  Spot end, bool isWhite)
+        public bool isMoveValid(Spot start, Spot end, bool isWhite)
         {
             //saves the original pieces to move them back after the simulation 
             Piece originalStartPiece = start.GetPiece();
@@ -44,8 +44,6 @@ namespace ChessGame
 
             //check if the move puts the king in check
             bool kingInCheck = isKingInCheck(isWhite);
-
-            Debug.WriteLine($"Is King in Check: {kingInCheck}");
 
             //reverts the pieces back to their original position
             start.SetPiece(originalStartPiece);
@@ -62,6 +60,16 @@ namespace ChessGame
             {
                 MarkThreats(piece);
             }
+
+            for (int i = 0; i < 8; i++)
+            {
+                for (int j = 0; j < 8; j++)
+                {
+                    Debug.Write(threatMap[i, j] ? "1 " : "0 ");
+                }
+                Debug.WriteLine("");
+            }
+
         }
 
         private void ClearThreatMap()
@@ -75,78 +83,104 @@ namespace ChessGame
             }
         }
 
-private void MarkThreats(Piece piece)
-{
-    if (piece.isTaken())
-    {
-        return;
-    }
-
-    try
-    {
-        Spot position = null;
-        for (int i = 0; i < 8; i++)
+        private void MarkThreats(Piece piece)
         {
-            for (int j = 0; j < 8; j++)
+            if (piece.isTaken())
             {
-                if (boxes[i][j]?.GetPiece() == piece)
+                return;
+            }
+
+            try
+            {
+                Spot position = null;
+
+                for (int i = 0; i < 8; i++)
                 {
-                    position = boxes[i][j];
-                    break;
+                    for (int j = 0; j < 8; j++)
+                    {
+                        if (boxes[i][j] != null)
+                        {
+                            Piece p = boxes[i][j].GetPiece();
+                            if (p == piece)
+                            {
+                                position = boxes[i][j];
+                                break;
+                            }
+                        }
+                    }
+                    if (position != null) break;
+                }
+
+                if (position == null)
+                {
+                    throw new InvalidOperationException("Piece not found on the board");
+                }
+
+
+                int row = position.GetRow(); 
+                int col = position.GetColumn(); 
+
+                switch (piece.type)
+                {
+                    case Piece.PieceType.Pawn:
+                        markPawnThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Rook:
+                        markRookThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Bishop:
+                        markBishopThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Queen:
+                        markQueenThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.Knight:
+                        MarkKnightThreats(piece, row, col);
+                        break;
+                    case Piece.PieceType.King:
+                        MarkKingThreats(piece, row, col);
+                        break;
                 }
             }
-            if (position != null) break;
+            catch (InvalidOperationException e)
+            {
+                Debug.WriteLine($"{e}");
+            }
         }
 
-        if (position == null)
+        private void MarkKingThreats(Piece king, int row, int col)
         {
-            throw new InvalidOperationException("Piece not found on the board");
+            int[] rows = { -1, -1, -1, 0, 0, 1, 1, 1 };
+            int[] columns = { -1, 0, 1, -1, 1, -1, 0, 1 };
+
+            for (int i = 0; i < rows.Length; i++)
+            {
+                int newRow = row + rows[i];
+                int newColumn = col + columns[i];
+
+                if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
+                {
+                    threatMap[newRow, newColumn] = true;
+                }
+            }
         }
 
-        int row = position.GetRow(); // Corrected row assignment
-        int col = position.GetColumn(); // Corrected column assignment
-
-        switch (piece.type)
+        private void markPawnThreats(Piece pawn, int row, int col)
         {
-            case Piece.PieceType.Pawn:
-                markPawnThreats(piece, row, col);
-                break;
-            case Piece.PieceType.Rook:
-                markRookThreats(piece, row, col);
-                break;
-            case Piece.PieceType.Bishop:
-                markBishopThreats(piece, row, col);
-                break;
-            case Piece.PieceType.Queen:
-                markQueenThreats(piece, row, col);
-                break;
-            case Piece.PieceType.Knight:
-                MarkKnightThreats(piece, row, col);
-                break;
-        }
-    }
-    catch (InvalidOperationException e)
-    {
-        Debug.WriteLine($"{e}");
-    }
-}
+            int direction = pawn.isWhite() ? -1 : 1; // Pawns move in opposite directions based on color
 
-private void markPawnThreats(Piece pawn, int row, int col)
-{
-    int direction = pawn.isWhite() ? -1 : 1; // Pawns move in opposite directions based on color
-
-    if (row + direction >= 0 && row + direction < 8)
-    {
-        if (col - 1 >= 0)
-        {
-            threatMap[row + direction, col - 1] = true;
+            if (row + direction >= 0 && row + direction < 8)
+            {
+                if (col - 1 >= 0)
+                {
+                    threatMap[row + direction, col - 1] = true;
+                }
+                if (col + 1 < 8)
+                {
+                    threatMap[row + direction, col + 1] = true;
+                }
+            }
         }
-        if (col + 1 < 8)
-        {
-            threatMap[row + direction, col + 1] = true;
-        }
-    }
-}
 
         private void markRookThreats(Piece rook, int row, int col)
         {
@@ -186,17 +220,14 @@ private void markPawnThreats(Piece pawn, int row, int col)
             {
                 int newRow = row + rows[i];
                 int newColumn = col + columns[i];
-                Debug.WriteLine($"\nCurrent Piece: {Knight}");
 
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
                     Spot spot = getSpot(newRow, newColumn);
-                    if (spot.GetPiece() != null) 
+                    if (spot.GetPiece() != null)
                     {
-                        Debug.WriteLine($"Knight Check {spot.GetPiece()}");
                         if (spot.GetPiece().type == Piece.PieceType.King)
                         {
-                            Debug.WriteLine($"Spot on threat map from knight: {spot}");
                             threatMap[newRow, newColumn] = true;
                         }
                     }
@@ -243,6 +274,7 @@ private void markPawnThreats(Piece pawn, int row, int col)
                 newColumn += Columns;
             }
         }
+
 
         private void MarkThreatsInDirectionDiagonal(Piece piece, int row, int col, Piece.Direction direction)
         {
@@ -303,16 +335,15 @@ private void markPawnThreats(Piece pawn, int row, int col)
             return threatMap[row, col];
         }
 
-        private Spot findKing(bool isWhite)
+        public Spot findKing(bool isWhite)
         {
-            foreach (Spot[] row in boxes)
+            List<Piece> pieces = isWhite ? whitePlayer.getPieces() : blackPlayer.getPieces();
+
+            foreach(Piece piece in pieces)
             {
-                foreach (Spot spot in row)
+                if(piece is Piece.King)
                 {
-                    if (spot != null && spot.GetPiece() != null && spot.GetPiece().GetType() == typeof(Piece.King) && spot.GetPiece().isWhite() == isWhite)
-                    {
-                        return spot;
-                    }
+                    return piece.getCurrentPosition();
                 }
             }
 
@@ -368,9 +399,9 @@ private void markPawnThreats(Piece pawn, int row, int col)
                 createPieces(new Piece.Pawn(false), 1, i, blackPlayer);
             }
 
-            for(int i = 2; i < 5; i++)
+            for (int i = 2; i < 6; i++)
             {
-                for(int j = 0; j < 8; j++)
+                for (int j = 0; j < 8; j++)
                 {
                     boxes[i][j] = new Spot(i, j, null);
                 }
@@ -379,27 +410,45 @@ private void markPawnThreats(Piece pawn, int row, int col)
 
         public void createPieces(Piece piece, int row, int col, Player player)
         {
-
             boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
+            Spot currentPosition = boxes[row][col];
+            piece.setCurrentPosition(currentPosition);
         }
+
+
 
         public void clearBoard()
         {
-            for(int i = 0; i < 8; i++)
+            for (int i = 0; i < 8; i++)
             {
-                for(int j = 0; j < 8; j++)
+                for (int j = 0; j < 8; j++)
                 {
                     boxes[i][j] = new Spot(i, j, null);
                 }
             }
+
+            emptyPieces(whitePlayer.getPieces());
+            emptyPieces(blackPlayer.getPieces());
         }
 
-        public void placePiece(Piece piece, string position)
+        public void emptyPieces(List<Piece> pieces)
         {
-            int row = 8 - int.Parse(position[1].ToString());
-            int col = position[0] - 'A';
-            boxes[row][col] = new Spot(row, col, piece);
+            pieces.Clear();
+        }
+
+        public void capturePiece(Piece piece)
+        {
+            if(piece.isWhite())
+            {
+                piece.setTaken(true);
+                whitePlayer.removePiece(piece);
+            }
+            else
+            {
+                piece.setTaken(true);
+                blackPlayer.removePiece(piece);
+            }
         }
     }
 }

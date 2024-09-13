@@ -53,13 +53,13 @@ namespace ChessGame
         public enum Direction
         {
             North,
-            South,
             East,
             West,
             Northeast,
             Northwest,
             Southeast,
-            Southwest
+            Southwest,
+            South,
         }
 
         public PieceType type { get; set; }
@@ -83,6 +83,19 @@ namespace ChessGame
             {
                 //Check to see if the spot where we are trying to move to is already occupied by a piece of that color
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
+                {
+                    return false;
+                }
+
+                if (board.isKingInCheck(isWhite()))
+                {
+                    return false;
+                }
+
+                int rowDifference = Math.Abs(start.GetRow() - end.GetRow());
+                int colDifference = Math.Abs(start.GetColumn() - end.GetColumn());
+
+                if(rowDifference > 1 || colDifference > 1)
                 {
                     return false;
                 }
@@ -157,6 +170,13 @@ namespace ChessGame
          * ********************************/
         public class Pawn : Piece
         {
+            private bool _isEnPassant = false;
+
+            public bool isEnPassant
+            {
+                get { return _isEnPassant; }
+                set { _isEnPassant = value; }
+            }
             public Pawn(bool white) : base(white)
             {
                 this.type = PieceType.Pawn;
@@ -184,6 +204,8 @@ namespace ChessGame
                     }
                 }
 
+                this.isEnPassant = false;
+
                 // White pawn moves
                 if (isWhite())
                 {
@@ -196,12 +218,28 @@ namespace ChessGame
                     // Forward move by 2 from the starting position
                     if (start.GetRow() == 6 && rowDifference == -2 && columnDifference == 0 && end.GetPiece() == null)
                     {
+                        this.isEnPassant = true;
                         return true;
                     }
                     // Capture move
                     if (rowDifference == -1 && columnDifference == 1 && end.GetPiece() != null && !end.GetPiece().isWhite())
                     {
                         return true;
+                    }
+
+                    //En passant capture move
+                    if (rowDifference == -1 && columnDifference == 1 && end.GetPiece() == null)
+                    {
+                        int adjacentRow = end.GetRow() + 1;
+                        int adjacentColumn = end.GetColumn();
+                        Spot adjacentSpot = board.getSpot(adjacentRow, adjacentColumn);
+
+                        if(adjacentSpot != null && adjacentSpot.GetPiece() is Pawn adjacentPawn && !adjacentPawn.isWhite() && adjacentPawn.isEnPassant)
+                        {
+                            adjacentSpot.SetPiece(null);
+                            board.capturePiece(adjacentPawn);
+                            return true;
+                        }
                     }
                 }
 
@@ -216,6 +254,7 @@ namespace ChessGame
                     // Forward move by 2 from the starting position
                     if (start.GetRow() == 1 && rowDifference == 2 && columnDifference == 0 && end.GetPiece() == null)
                     {
+                        this.isEnPassant = true;
                         return true;
                     }
                     // Capture move
@@ -223,17 +262,23 @@ namespace ChessGame
                     {
                         return true;
                     }
+
+                    //En passant capture move
+                    if(rowDifference == 1 && columnDifference == 1 && end.GetPiece() == null) {
+                        int adjacentRow = end.GetRow() - 1;
+                        int adjacentColumn = end.GetColumn();
+                        Spot adjacentSpot = board.getSpot(adjacentRow, adjacentColumn);
+
+                        if(adjacentSpot != null && adjacentSpot.GetPiece() is Pawn adjacentPawn && adjacentPawn.isWhite() && adjacentPawn.isEnPassant)
+                        {
+                            return true;
+                        }
+
+                    }
                 }
 
                 Debug.WriteLine("Illegal pawn move");
                 return false;
-            }
-
-
-
-            public bool enPassant()
-            {
-                return true;
             }
 
             //Checks if the pawn is able to attack based on its position and the position of pieces around it 

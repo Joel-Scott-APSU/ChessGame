@@ -15,6 +15,13 @@ namespace ChessGame
         public VisualBrush Background { get; set; }
         public bool isWhiteSquare { get; set; } // Added property
 
+        public ChessBoardSquare(int row, int column)
+        {
+            this.row = row;
+            this.column = column;
+            this.Background = new VisualBrush();
+            
+        }
         public ImageSource PieceImage
         {
             get => pieceImage;

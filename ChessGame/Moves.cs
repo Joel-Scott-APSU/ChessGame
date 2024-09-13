@@ -1,15 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
+using System.Data;
 using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
-using System.Windows.Documents;
-using static ChessGame.Piece;
 
 namespace ChessGame
 {
@@ -17,22 +9,20 @@ namespace ChessGame
     {
         private Player whitePlayer;
         private Player blackPlayer;
-        private Dictionary<Piece, Spot> originalPositions;
-        public Moves(Player blackPlayer, Player whitePlayer)
+
+        public Moves(Player whitePlayer, Player blackPlayer)
         {
             this.blackPlayer = blackPlayer;
             this.whitePlayer = whitePlayer;
-            this.originalPositions = new Dictionary<Piece, Spot>();
         }
 
-        public bool checkForLegalMoves(bool isWhite, Board board)
+        public (bool, Spot) checkForLegalMoves(Player player, Board board, List<Piece> pieces)
         {
             try
             {
-                List<Piece> pieces = isWhite ? whitePlayer.getPieces() : blackPlayer.getPieces();
-
                 foreach (Piece piece in pieces)
                 {
+
                     Spot start = piece.getCurrentPosition();
 
                     switch (piece.type)
@@ -40,62 +30,92 @@ namespace ChessGame
                         case Piece.PieceType.Rook:
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
-                                checkRookMoves(isWhite, direction, board, start);
+                                var (canMove, spot) = checkRookMoves(player, direction, board, start);
+
+                                    return (true, start);
+                                
                             }
                             break;
 
                         case Piece.PieceType.Pawn:
-                            checkPawnMoves(isWhite, start, board, piece);
+                            var (pawnCanMove, pawnSpot) = checkPawnMoves(player, start, board, piece);
+                            if (pawnCanMove)
+                            {
+                                return (true, pawnSpot);
+                            }
                             break;
 
                         case Piece.PieceType.Knight:
-                            checkKnightMoves(isWhite, start, board);
+                            var (knightCanMove, knightSpot) = checkKnightMoves(player, start, board);
+                            if (knightCanMove)
+                            {
+                                return (true, knightSpot);
+                            }
                             break;
 
                         case Piece.PieceType.Bishop:
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
-                                checkBishopMoves(isWhite, start, board, direction);
+                                var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
+                                if (bishopCanMove)
+                                {
+                                    return (true, bishopSpot);
+                                }
                             }
                             break;
 
                         case Piece.PieceType.Queen:
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
-                                checkRookMoves(isWhite, direction, board, start);
-                                checkBishopMoves(isWhite, start, board, direction);
+                                var (rookCanMove, rookSpot) = checkRookMoves(player, direction, board, start);
+                                var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
+                                if (rookCanMove)
+                                {
+                                    return (true, rookSpot);
+                                }
+                                if (bishopCanMove)
+                                {
+                                    return (true, bishopSpot);
+                                }
                             }
                             break;
 
                         case Piece.PieceType.King:
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
-                                checkKingMoves(isWhite, start, board, direction);
+                                var (kingCanMove, kingSpot) = checkKingMoves(player, start, board, direction);
+                                if (kingCanMove)
+                                {
+                                    return (true, start);
+                                }
                             }
                             break;
                     }
                 }
-            }catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Debug.WriteLine(e.ToString());
-                Debug.WriteLine($"Unable to determine if legal moves are possible. Fatal Error Occured. {e}");
+                Debug.WriteLine($"Unable to determine if legal moves are possible. Fatal Error Occurred. {e}");
             }
-            return false;
+            return (false, null);
         }
 
-        private bool checkRookMoves(bool isWhite, Piece.Direction direction, Board board, Spot start)
+        private (bool, Spot) checkRookMoves(Player player, Piece.Direction direction, Board board, Spot start)
         {
-            int rows = 0, cols = 0;
+            bool isWhite = player.IsWhite;
+            int rowDelta = 0, colDelta = 0;
             switch (direction)
             {
-                case Piece.Direction.North: rows = -1; break;
-                case Piece.Direction.South: rows = 1; break;
-                case Piece.Direction.East: cols = 1; break;
-                case Piece.Direction.West: cols = -1; break;
+                case Piece.Direction.North: rowDelta = -1; break;
+                case Piece.Direction.South: rowDelta = 1; break;
+                case Piece.Direction.East: colDelta = 1; break;
+                case Piece.Direction.West: colDelta = -1; break;
+                default: return (false, null);
             }
 
-            int pieceRow = start.GetRow() + rows;
-            int pieceCol = start.GetColumn() + cols;
+            int pieceRow = start.GetRow() + rowDelta;
+            int pieceCol = start.GetColumn() + colDelta;
 
             while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
             {
@@ -106,54 +126,59 @@ namespace ChessGame
                 {
                     if (currentPiece.isWhite() != isWhite)
                     {
-                        Piece capturedPiece = currentPiece;
-                        currentSpot.SetPiece(start.GetPiece());
-                        start.SetPiece(null);
-
-                        if (!board.isKingInCheck(isWhite))
+                        if (TryMoveRook(start, currentSpot, board, player))
                         {
-                            start.SetPiece(currentSpot.GetPiece());
-                            currentSpot.SetPiece(capturedPiece);
-                            return true;
+                            return (true, currentSpot);
                         }
-
-                        currentSpot.SetPiece(capturedPiece);
-                        start.SetPiece(currentSpot.GetPiece());
                     }
-                    break; // Stop if there's an obstruction
+                    break;
                 }
                 else
                 {
-                    currentSpot.SetPiece(start.GetPiece());
-                    start.SetPiece(null);
-
-                    if (!board.isKingInCheck(isWhite))
+                    if (TryMoveRook(start, currentSpot, board, player))
                     {
-                        start.SetPiece(currentSpot.GetPiece());
-                        currentSpot.SetPiece(null);
-                        return true;
+                        return (true, currentSpot);
                     }
-
-                    start.SetPiece(currentSpot.GetPiece());
-                    currentSpot.SetPiece(null);
                 }
 
-                pieceRow += rows;
-                pieceCol += cols;
+                pieceRow += rowDelta;
+                pieceCol += colDelta;
             }
 
-            return false;
+            return (false, null);
         }
 
+        private bool TryMoveRook(Spot start, Spot target, Board board, Player player)
+        {
+            bool isWhite = player.IsWhite;
+            List<Piece> pieces = isWhite ? whitePlayer.getPieces() : blackPlayer.getPieces();
 
-        private bool checkPawnMoves(bool isWhite, Spot start, Board board, Piece pawn)
+            Piece movedPiece = start.GetPiece();
+            Piece capturedPiece = target.GetPiece();
+
+            pieces.Remove(capturedPiece);
+
+            target.SetPiece(movedPiece);
+            start.SetPiece(null);
+
+            board.updateThreatMap(pieces);
+
+            bool kingSafe = !board.isKingInCheck(isWhite);
+
+            start.SetPiece(movedPiece);
+            target.SetPiece(capturedPiece);
+            pieces.Add(capturedPiece);
+
+            return kingSafe;
+        }
+
+        private (bool, Spot) checkPawnMoves(Player player, Spot start, Board board, Piece pawn)
         {
             int row = start.GetRow();
             int col = start.GetColumn();
+            bool isWhite = player.IsWhite;
             int direction = isWhite ? -1 : 1;
-            Piece piece = start.GetPiece();
 
-            // Capture diagonally
             for (int colOffset = -1; colOffset <= 1; colOffset += 2)
             {
                 int newCol = col + colOffset;
@@ -163,44 +188,42 @@ namespace ChessGame
                     Piece attackedPiece = attackSpot.GetPiece();
                     if (attackedPiece != null && attackedPiece.isWhite() != isWhite)
                     {
-                        attackSpot.SetPiece(piece);
+                        attackSpot.SetPiece(pawn);
                         start.SetPiece(null);
 
                         if (!board.isKingInCheck(isWhite))
                         {
-                            start.SetPiece(piece);
+                            start.SetPiece(pawn);
                             attackSpot.SetPiece(attackedPiece);
-                            return true;
+                            return (true, attackSpot);
                         }
 
-                        start.SetPiece(piece);
+                        start.SetPiece(pawn);
                         attackSpot.SetPiece(attackedPiece);
                     }
                 }
             }
 
-            // Move forward
             if (row + direction >= 0 && row + direction < 8)
             {
                 Spot moveSpot = board.getSpot(row + direction, col);
                 if (moveSpot.GetPiece() == null)
                 {
-                    moveSpot.SetPiece(piece);
+                    moveSpot.SetPiece(pawn);
                     start.SetPiece(null);
 
                     if (!board.isKingInCheck(isWhite))
                     {
-                        start.SetPiece(piece);
+                        start.SetPiece(pawn);
                         moveSpot.SetPiece(null);
-                        return true;
+                        return (true, moveSpot);
                     }
 
-                    start.SetPiece(piece);
+                    start.SetPiece(pawn);
                     moveSpot.SetPiece(null);
                 }
             }
 
-            // Special handling for double move from starting row
             if ((isWhite && row == 6) || (!isWhite && row == 1))
             {
                 int doubleMoveRow = row + 2 * direction;
@@ -209,28 +232,28 @@ namespace ChessGame
                     Spot doubleMoveSpot = board.getSpot(doubleMoveRow, col);
                     if (doubleMoveSpot.GetPiece() == null)
                     {
-                        doubleMoveSpot.SetPiece(piece);
+                        doubleMoveSpot.SetPiece(pawn);
                         start.SetPiece(null);
 
                         if (!board.isKingInCheck(isWhite))
                         {
-                            start.SetPiece(piece);
+                            start.SetPiece(pawn);
                             doubleMoveSpot.SetPiece(null);
-                            return true;
+                            return (true, doubleMoveSpot);
                         }
 
-                        start.SetPiece(piece);
+                        start.SetPiece(pawn);
                         doubleMoveSpot.SetPiece(null);
                     }
                 }
             }
 
-            return false;
+            return (false, null);
         }
 
-
-        private bool checkKnightMoves(bool isWhite, Spot start, Board board)
+        private (bool, Spot) checkKnightMoves(Player player, Spot start, Board board)
         {
+            bool isWhite = player.IsWhite;
             int[] rowOffsets = { 2, 2, 1, -1, -2, -2, 1, -1 };
             int[] colOffsets = { -1, 1, -2, -2, -1, 1, 2, 2 };
 
@@ -254,7 +277,7 @@ namespace ChessGame
                         {
                             start.SetPiece(moveSpot.GetPiece());
                             moveSpot.SetPiece(capturedPiece);
-                            return true;
+                            return (true, moveSpot);
                         }
 
                         start.SetPiece(moveSpot.GetPiece());
@@ -263,12 +286,12 @@ namespace ChessGame
                 }
             }
 
-            return false;
+            return (false, null);
         }
 
-
-        private bool checkBishopMoves(bool isWhite, Spot start, Board board, Piece.Direction direction)
+        private (bool, Spot) checkBishopMoves(Player player, Spot start, Board board, Piece.Direction direction)
         {
+            bool isWhite = player.IsWhite;
             int rows = 0;
             int cols = 0;
             Piece currentPiece = start.GetPiece();
@@ -287,92 +310,8 @@ namespace ChessGame
                 case Piece.Direction.Southwest:
                     rows = 1; cols = -1;
                     break;
-            }
-
-            int pieceRow = start.GetRow() + rows;
-            int pieceCol = start.GetColumn() + cols;
-
-            while(pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
-            {
-                Spot currentSpot = board.getSpot(pieceRow, pieceCol);
-                Piece capturedPiece = currentSpot.GetPiece();
-
-
-                if (currentSpot.GetPiece() != null)
-                {
-                    if(currentSpot.GetPiece().isWhite() != isWhite)
-                    {
-                        currentSpot.SetPiece(currentPiece);
-                        start.SetPiece(null);
-
-                        if (!board.isKingInCheck(isWhite))
-                        {
-                            start.SetPiece(currentPiece);
-                            currentSpot.SetPiece(capturedPiece);
-                            return true;
-                        }
-
-                        start.SetPiece(currentPiece);
-                        currentSpot.SetPiece(capturedPiece);
-                    }
-                }
-
-                else
-                {
-                    currentSpot.SetPiece(currentPiece);
-                    start.SetPiece(null);
-
-                    if (!board.isKingInCheck(isWhite))
-                    {
-                        start.SetPiece(currentPiece);
-                        currentSpot.SetPiece(capturedPiece);
-                        return true;
-                    }
-
-                    start.SetPiece(currentPiece);
-                    currentSpot.SetPiece(capturedPiece);
-                }
-
-                pieceRow += rows;
-                pieceCol += cols;
-            }
-
-            return false;
-        }
-
-        private bool checkKingMoves(bool isWhite, Spot start, Board board, Piece.Direction direction)
-        {
-
-            Piece king = start.GetPiece();
-            int rows = 0;
-            int cols = 0;
-
-            switch (direction)
-            {
-                case Piece.Direction.North:
-                    rows = -1;
-                    break;
-                case Piece.Direction.South:
-                    rows = 1;
-                    break;
-                case Piece.Direction.East:
-                    cols = 1;
-                    break;
-                case Piece.Direction.West:
-                    cols = -1;
-                    break;
-                case Piece.Direction.Northeast:
-                    rows = -1; cols = 1;
-                    break;
-                case Piece.Direction.Northwest:
-                    rows = -1; cols = -1;
-                    break;
-                case Piece.Direction.Southeast:
-                    rows = 1; cols = 1;
-                    break;
-                case Piece.Direction.Southwest:
-                    rows = 1; cols = -1;
-                    break;
+                default:
+                    return (false, null);
             }
 
             int pieceRow = start.GetRow() + rows;
@@ -381,44 +320,124 @@ namespace ChessGame
             while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
             {
                 Spot currentSpot = board.getSpot(pieceRow, pieceCol);
-                Piece capturedPiece = currentSpot.GetPiece();
+                Piece pieceAtSpot = currentSpot.GetPiece();
 
-                if(currentSpot.GetPiece() != null)
+                if (pieceAtSpot != null)
                 {
-                    if(capturedPiece.isWhite() != isWhite)
+                    if (pieceAtSpot.isWhite() != isWhite)
                     {
-                        currentSpot.SetPiece(king);
-                        start.SetPiece(null);
-
-                        if (!board.isKingInCheck(isWhite))
+                        if (TryMoveBishop(start, currentSpot, board, player))
                         {
-                            start.SetPiece(king);
-                            currentSpot.SetPiece(capturedPiece);
-                            return true;
+                            return (true, currentSpot);
                         }
-
-                        start.SetPiece(king);
-                        currentSpot.SetPiece(capturedPiece);
                     }
+                    break;
                 }
                 else
                 {
-                    currentSpot.SetPiece(king);
-                    start.SetPiece(null);
-
-                    if (!board.isKingInCheck(isWhite))
+                    if (TryMoveBishop(start, currentSpot, board, player))
                     {
-                        start.SetPiece(king);
-                        currentSpot.SetPiece(capturedPiece);
-                        return true;
+                        return (true, currentSpot);
+                    }
+                }
+
+                pieceRow += rows;
+                pieceCol += cols;
+            }
+
+            return (false, null);
+        }
+
+        private bool TryMoveBishop(Spot start, Spot target, Board board, Player player)
+        {
+            bool isWhite = player.IsWhite;
+            Piece movedPiece = start.GetPiece();
+            Piece capturedPiece = target.GetPiece();
+
+            target.SetPiece(movedPiece);
+            start.SetPiece(null);
+
+            bool kingSafe = !board.isKingInCheck(isWhite);
+
+            start.SetPiece(movedPiece);
+            target.SetPiece(capturedPiece);
+
+            return kingSafe;
+        }
+
+        private (bool, Spot) checkKingMoves(Player player, Spot start, Board board, Piece.Direction direction)
+        {
+            int rowDelta = 0;
+            int colDelta = 0;
+            Piece currentPiece = start.GetPiece();
+            List<Piece> pieces = player.getPieces();
+            bool isWhite = player.IsWhite;
+
+            switch (direction)
+            {
+                case Piece.Direction.North: rowDelta = -1; break;
+                case Piece.Direction.South: rowDelta = 1; break;
+                case Piece.Direction.East: colDelta = 1; break;
+                case Piece.Direction.West: colDelta = -1; break;
+                case Piece.Direction.Northeast: rowDelta = -1; colDelta = 1; break;
+                case Piece.Direction.Northwest: rowDelta = -1; colDelta = -1; break;
+                case Piece.Direction.Southeast: rowDelta = 1; colDelta = 1; break;
+                case Piece.Direction.Southwest: rowDelta = 1; colDelta = -1; break;
+                default: return (false, null);
+            }
+
+            int newRow = start.GetRow() + rowDelta;
+            int newCol = start.GetColumn() + colDelta;
+
+            if (Math.Abs(newRow - start.GetRow()) <= 1 && Math.Abs(newCol - start.GetColumn()) <= 1)
+            {
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
+                {
+                    Spot moveSpot = board.getSpot(newRow, newCol);
+
+                    // Store the original state
+                    Spot originalSpot = start;
+                    Piece originalTargetPiece = moveSpot.GetPiece();
+
+                    // Temporarily move the king
+                    moveSpot.SetPiece(currentPiece);
+                    originalSpot.SetPiece(null);
+                    currentPiece.setCurrentPosition(moveSpot);
+
+                    // Temporarily set the captured piece's position to null if there is one
+                    if (originalTargetPiece != null)
+                    {
+                        originalTargetPiece.setCurrentPosition(null);
+                        player.removePiece(originalTargetPiece);
                     }
 
-                    start.SetPiece(king);
-                    currentSpot.SetPiece(capturedPiece);
-                   
+                    // Update the threat map and check if the king is in check
+                    board.updateThreatMap(pieces);
+                    bool isMoveSafe = !board.isKingInCheck(isWhite);
+
+                    // Revert the move
+                    if (originalTargetPiece != null)
+                    {
+                        moveSpot.SetPiece(originalTargetPiece); // Restore the captured piece, if any
+                        originalTargetPiece.setCurrentPosition(moveSpot);
+                        player.addPiece(originalTargetPiece);
+                    }
+
+                    originalSpot.SetPiece(currentPiece);
+                    currentPiece.setCurrentPosition(originalSpot);
+
+                    if (isMoveSafe)
+                    {
+                        return (true, moveSpot);
+                    }
                 }
             }
-            return false;
+
+            return (false, null);
         }
+
+
+
+
     }
 }
