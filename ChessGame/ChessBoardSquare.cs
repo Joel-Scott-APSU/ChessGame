@@ -14,6 +14,7 @@ namespace ChessGame
         public int column { get; set; }
         public VisualBrush Background { get; set; }
         public bool isWhiteSquare { get; set; } // Added property
+        public Piece piece { get; set; }
 
         public ChessBoardSquare(int row, int column)
         {

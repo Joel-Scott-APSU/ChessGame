@@ -113,6 +113,7 @@ namespace ChessGame
 
                 if (position == null)
                 {
+                    Debug.WriteLine($"Piece that cannot be found: {piece} Piece location: {piece.getCurrentPosition()}");
                     throw new InvalidOperationException("Piece not found on the board");
                 }
 

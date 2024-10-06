@@ -70,9 +70,30 @@ namespace ChessGame
         }
         public class King : Piece
         {
-            public bool castling = false;
+            private bool _canCastleKingside = false;
 
-            private bool hasMoved = false;
+            private bool _canCastleQueenside = false;
+
+            public bool CanCastleKingside
+            {
+                get { return _canCastleKingside; }
+                set { _canCastleKingside = value; }
+            }
+
+            public bool CanCastleQueenside
+            {
+                get { return _canCastleQueenside; }
+                set { _canCastleQueenside = value; }
+            }
+
+            private bool _hasMoved = false;
+            
+            public bool hasMoved
+            {
+                get { return _hasMoved; ; }
+                set { _hasMoved = value; }
+            }
+
             public King(bool white) : base(white)
             {
                 this.type = PieceType.King;
@@ -100,10 +121,11 @@ namespace ChessGame
                     return false;
                 }
 
+                hasMoved = true;
                 return true;
             }
 
-            private bool canCastleKingside(bool isWhite, Board board)
+            public bool canCastleKingside(bool isWhite, Board board)
             {
                 int row = isWhite ? 0 : 7;
 
@@ -123,18 +145,14 @@ namespace ChessGame
 
                     for (int i = 5; i <= 6; i++)
                     {
-                        if (board.isSquareUnderThreat(isWhite, i, row) || board.getSpot(i, row).GetPiece() != null) return false;
+                        if (board.getSpot(i, row).GetPiece() != null || board.isSquareUnderThreat(isWhite, i, row)) return false;
                     }
-                }
-                else
-                {
-                    return false;
                 }
 
                 return true;
             }
 
-            private bool canCastleQueenside(bool isWhite, Board board)
+            public bool canCastleQueenside(bool isWhite, Board board)
             {
                 int row = isWhite ? 0 : 7;
 
@@ -155,10 +173,6 @@ namespace ChessGame
                     }
 
                     if (board.getSpot(row, 1).GetPiece() != null) return false;
-                }
-                else
-                {
-                    return false;
                 }
                 return true;
             }

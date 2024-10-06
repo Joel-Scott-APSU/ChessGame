@@ -44,6 +44,7 @@ namespace ChessGame
 
             Spot start = board.getSpot(fromRow, fromColumn);
             Spot end = board.getSpot(toRow, toColumn);
+
             if (enPassantRow > 0 && enPassantRow < 7)
             {
                 enPassantPiece = board.getSpot(enPassantRow, toColumn).GetPiece();
@@ -97,30 +98,9 @@ namespace ChessGame
                 end.SetPiece(movingPiece);
                 start.SetPiece(null);
 
-                board.updateThreatMap(currentTurn.getPieces());
-
-                if (board.isKingInCheck(currentTurn.IsWhite))
-                {
-                    Debug.WriteLine("King is in Check, running checkForLegalMoves function");
-
-                    (bool canMove, Spot spot) = moves.checkForLegalMoves(currentTurn, board, currentTurn.getPieces());
-                    if (!canMove)
-                    {
-                        Debug.WriteLine("CHECKMATE");
-                    }
-                }
-
                 movingPiece.setCurrentPosition(end);
 
-                currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;
-
-                foreach (Piece enPassant in currentTurn.getPieces())
-                {
-                    if (enPassant is Piece.Pawn pawn && pawn.isWhite() == currentTurn.IsWhite)
-                    {
-                        pawn.isEnPassant = false;
-                    }
-                }
+                swapTurn();
 
                 Debug.WriteLine($"\nCurrent Player {currentTurn}\n");
 
@@ -162,6 +142,47 @@ namespace ChessGame
             }
 
             return (null, false);
+        }
+
+        public bool CastleKingSide(Piece movingPiece, ChessBoardSquare toSquare, ChessBoardSquare fromSquare, Board board)
+        {
+            if(movingPiece is Piece.King king && king.canCastleKingside(king.isWhite(), board))
+            {
+                Spot kingSpot = board.getSpot(fromSquare.row, fromSquare.column);
+                Spot targetSpot = board.getSpot(toSquare.row, 6);
+
+                Spot rookSpot = board.getSpot(fromSquare.row, 7);
+                Spot rookTargetSpot = board.getSpot(toSquare.row, 5);
+
+
+            }
+            return false;
+        }
+
+        private void swapTurn()
+        {
+            board.updateThreatMap(currentTurn.getPieces());
+
+            if (board.isKingInCheck(currentTurn.IsWhite))
+            {
+                Debug.WriteLine("King is in Check, running checkForLegalMoves function");
+
+                (bool canMove, Spot spot) = moves.checkForLegalMoves(currentTurn, board, currentTurn.getPieces());
+                if (!canMove)
+                {
+                    Debug.WriteLine("CHECKMATE");
+                }
+            }
+
+            currentTurn = currentTurn == whitePlayer ? blackPlayer : whitePlayer;
+
+            foreach (Piece enPassant in currentTurn.getPieces())
+            {
+                if (enPassant is Piece.Pawn pawn && pawn.isWhite() == currentTurn.IsWhite)
+                {
+                    pawn.isEnPassant = false;
+                }
+            }
         }
 
     }

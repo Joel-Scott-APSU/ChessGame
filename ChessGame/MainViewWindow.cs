@@ -142,6 +142,11 @@ namespace ChessGame
                 {
                     Debug.WriteLine($"Selected Square: {selectedSquare} Square: {square}");
 
+                    if(square.piece is Piece.Rook)
+                    {
+
+                    }
+
                     // Call movePiece and retrieve if move was successful and if en passant capture occurred
                     (bool moveSuccessful, bool enPassantCapture) = game.movePiece(selectedSquare, square);
 
@@ -189,7 +194,6 @@ namespace ChessGame
 
             // Use FindSquare to locate the en passant square
             ChessBoardSquare enPassantSquare = FindSquare(enPassantRow, toSquare.column);
-            Debug.WriteLine($"En Passant Square: {enPassantSquare}");
 
             // If the enPassantSquare is found, clear the piece image from it
             if (enPassantSquare != null)
