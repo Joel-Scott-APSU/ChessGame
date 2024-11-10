@@ -241,5 +241,69 @@ namespace ChessGame.Tests
             Assert.IsTrue(moveResult, "Black pawn should be able to capture white pawn en passant.");
             Assert.IsNull(board.getSpot(4, 4).GetPiece(), "The white pawn should be removed from the board after en passant.");
         }
+
+        [TestMethod]
+        public void TestKingSideCastle()
+        {
+            // Set up the board
+            board.clearBoard();
+
+            // Create the necessary pieces for kingside castling (White King and White Rook)
+            Piece whiteKing = new Piece.King(true);
+            Piece whiteRook = new Piece.Rook(true);
+
+            // Place the King and Rook on their initial positions
+            board.createPieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
+            board.createPieces(whiteRook, 7, 7, whitePlayer); // Rook at H1 (7,7)
+
+            // Ensure the spaces between the King and Rook are clear and no threat is posed
+            board.getSpot(7, 5).SetPiece(null); // F1
+            board.getSpot(7, 6).SetPiece(null); // G1
+
+            // Attempt to castle kingside
+            ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
+            ChessBoardSquare rookTo = new ChessBoardSquare(7, 7); // This is where we check castling
+
+            var (moveSuccessful, enPassant, castledKingSide, castledQueenSide) = game.movePiece(kingFrom, rookTo);
+
+            // Assert that kingside castling was successful
+            Assert.IsTrue(castledKingSide, "White should be able to castle kingside.");
+            Assert.IsNull(board.getSpot(7, 4).GetPiece(), "The King's original spot (E1) should be empty.");
+            Assert.IsNotNull(board.getSpot(7, 6).GetPiece(), "The King should be moved to G1.");
+            Assert.IsNotNull(board.getSpot(7, 5).GetPiece(), "The Rook should be moved to F1.");
+        }
+
+        [TestMethod]
+        public void TestQueenSideCastle()
+        {
+            // Set up the board
+            board.clearBoard();
+
+            // Create the necessary pieces for queenside castling (White King and White Rook)
+            Piece whiteKing = new Piece.King(true);
+            Piece whiteRook = new Piece.Rook(true);
+
+            // Place the King and Rook on their initial positions
+            board.createPieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
+            board.createPieces(whiteRook, 7, 0, whitePlayer); // Rook at A1 (7,0)
+
+            // Ensure the spaces between the King and Rook are clear and no threat is posed
+            board.getSpot(7, 1).SetPiece(null); // B1
+            board.getSpot(7, 2).SetPiece(null); // C1
+            board.getSpot(7, 3).SetPiece(null); // D1
+
+            // Attempt to castle queenside
+            ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
+            ChessBoardSquare rookTo = new ChessBoardSquare(7, 0); // This is where we check castling
+
+            var (moveSuccessful, enPassant, castledKingSide, castledQueenSide) = game.movePiece(kingFrom, rookTo);
+
+            // Assert that queenside castling was successful
+            Assert.IsTrue(castledQueenSide, "White should be able to castle queenside.");
+            Assert.IsNull(board.getSpot(7, 4).GetPiece(), "The King's original spot (E1) should be empty.");
+            Assert.IsNotNull(board.getSpot(7, 2).GetPiece(), "The King should be moved to C1.");
+            Assert.IsNotNull(board.getSpot(7, 3).GetPiece(), "The Rook should be moved to D1.");
+        }
+
     }
 }

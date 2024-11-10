@@ -140,17 +140,9 @@ namespace ChessGame
             {
                 if (!square.IsHighlighted)
                 {
-                    Debug.WriteLine($"Selected Square: {selectedSquare} Square: {square}");
-
-                    if(square.piece is Piece.Rook)
-                    {
-
-                    }
-
                     // Call movePiece and retrieve if move was successful and if en passant capture occurred
-                    (bool moveSuccessful, bool enPassantCapture) = game.movePiece(selectedSquare, square);
+                    (bool moveSuccessful, bool enPassantCapture, bool CastleKingSide, bool CastleQueenSide) = game.movePiece(selectedSquare, square);
 
-                    Debug.WriteLine($"MoveSuccessful: {moveSuccessful}, EnPassantCapture: {enPassantCapture}");
 
                     if (moveSuccessful)
                     {
@@ -158,10 +150,20 @@ namespace ChessGame
                         {
                             MovePieceEnPassant(selectedSquare, square);
                         }
+
                         else
                         {
                             MovePiece(selectedSquare, square);
                         }
+                    }
+                    else if (CastleKingSide)
+                    {
+                        MovePiecesCastleKingside(selectedSquare, square);
+                    }
+
+                    else if (CastleQueenSide)
+                    {
+                        MovePiecesCastleQueenside(selectedSquare, square);
                     }
                 }
 
@@ -209,6 +211,31 @@ namespace ChessGame
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
 
+        private void MovePiecesCastleKingside(ChessBoardSquare kingSquare, ChessBoardSquare rookSquare)
+        {
+            ChessBoardSquare kingCastlingSquare = FindSquare(kingSquare.row, kingSquare.column + 2);
+            kingCastlingSquare.PieceImage = kingSquare.PieceImage;
+            kingSquare.PieceImage = null;
+
+            ChessBoardSquare rookCastlingSquare = FindSquare(rookSquare.row, kingCastlingSquare.column - 1);
+            rookCastlingSquare.PieceImage = rookSquare.PieceImage;
+            rookSquare.PieceImage = null;
+
+            OnPropertyChanged(nameof(ChessBoardSquares));
+        }
+
+        private void MovePiecesCastleQueenside(ChessBoardSquare kingSquare, ChessBoardSquare rookSquare)
+        {
+            ChessBoardSquare kingCastlingSquare = FindSquare(kingSquare.row, kingSquare.column - 2);
+            kingCastlingSquare.PieceImage = kingSquare.PieceImage;
+            kingSquare.PieceImage = null;
+
+            ChessBoardSquare rookCastlingSquare = FindSquare(rookSquare.row, kingCastlingSquare.column + 1);
+            rookCastlingSquare.PieceImage = rookSquare.PieceImage;
+            rookSquare.PieceImage = null;
+
+            OnPropertyChanged(nameof(ChessBoardSquares));
+        }
 
 
         // Helper method to find a ChessBoardSquare by its row and column

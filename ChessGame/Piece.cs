@@ -105,6 +105,7 @@ namespace ChessGame
                 //Check to see if the spot where we are trying to move to is already occupied by a piece of that color
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
+
                     return false;
                 }
 
@@ -116,7 +117,7 @@ namespace ChessGame
                 int rowDifference = Math.Abs(start.GetRow() - end.GetRow());
                 int colDifference = Math.Abs(start.GetColumn() - end.GetColumn());
 
-                if(rowDifference > 1 || colDifference > 1)
+                if (rowDifference > 1 || colDifference > 1)
                 {
                     return false;
                 }
@@ -127,7 +128,7 @@ namespace ChessGame
 
             public bool canCastleKingside(bool isWhite, Board board)
             {
-                int row = isWhite ? 0 : 7;
+                int row = isWhite ? 7 : 0;
 
                 Spot rookSpot = board.getSpot(row, 7);
                 Spot kingSpot = board.getSpot(row, 4);
@@ -138,14 +139,17 @@ namespace ChessGame
 
                 if (kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
                 {
-                    if (king.hasMoved || rook.HasMoved)
+                    if (king.hasMoved || rook.hasMoved)
                     {
                         return false;
                     }
 
                     for (int i = 5; i <= 6; i++)
                     {
-                        if (board.getSpot(i, row).GetPiece() != null || board.isSquareUnderThreat(isWhite, i, row)) return false;
+                        if (board.getSpot(row, i).GetPiece() != null || board.isSquareUnderThreat(isWhite, row, i))
+                        {
+                            return false;
+                        }
                     }
                 }
 
@@ -165,7 +169,7 @@ namespace ChessGame
 
                 if (kingSpot.GetPiece() is King king && rookSpot.GetPiece() is Rook rook)
                 {
-                    if (king.hasMoved || rook.HasMoved) return false;
+                    if (king.hasMoved || rook.hasMoved) return false;
 
                     for (int i = 3; i > 1; i--)
                     {
@@ -202,7 +206,6 @@ namespace ChessGame
                 //verifies that the end square does not contain a piece of the same color 
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
-                    Debug.WriteLine("Piece of the same color on the spot");
                     return false;
                 }
 
@@ -212,7 +215,7 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if (!board.isMoveValid(start, end, isWhite()))
+                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -291,7 +294,6 @@ namespace ChessGame
                     }
                 }
 
-                Debug.WriteLine("Illegal pawn move");
                 return false;
             }
 
@@ -317,9 +319,12 @@ namespace ChessGame
         public class Rook : Piece
         {
             //checks if the rook has moved for castling
-            private bool hasMoved = false;
+            private bool _hasMoved = false;
 
-            public bool HasMoved { get { return hasMoved; } }
+            public bool hasMoved { 
+                get { return _hasMoved; } 
+                set { _hasMoved = value; }
+            }
 
             public Rook(bool white) : base(white)
             {
@@ -329,7 +334,6 @@ namespace ChessGame
             override
             public bool legalMove(Board board, Spot start, Spot end)
             {
-                Debug.WriteLine($"Has Moved: {HasMoved}");
                 //gets the starting and ending points of the rook 
                 int startRow = start.GetRow();
                 int startColumn = start.GetColumn();
@@ -350,7 +354,7 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if(!board.isMoveValid(start, end, isWhite()))
+                    if(!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false; 
                     }
@@ -370,7 +374,6 @@ namespace ChessGame
                 int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
                 int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
-                Debug.WriteLine($"movement X: {movementDirectionX}, Y: {movementDirectionY}");
                 if (movementDirectionX != 0 && movementDirectionY != 0)
                 {
                     return false;
@@ -378,7 +381,6 @@ namespace ChessGame
 
                 int currentX = startRow + movementDirectionX;
                 int currentY = startColumn + movementDirectionY;
-                Debug.WriteLine($"Current X: {currentX}, Current Y: {currentY}");
 
                 while (currentX != endRow || currentY != endColumn)
                 {
@@ -425,7 +427,7 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if (!board.isMoveValid(start, end, isWhite()))
+                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -473,7 +475,7 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if (!board.isMoveValid(start, end, isWhite()))
+                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -532,7 +534,6 @@ namespace ChessGame
                 int endRow = end.GetColumn();
                 int endColumn = end.GetRow();
 
-                Debug.WriteLine($"Is Move Valid: {board.isMoveValid(start, end, isWhite())}");
                 //checks that the piece on the ending square is not of the same color as the moving piece
                 if (end.GetPiece() != null && end.GetPiece().isWhite() == this.isWhite())
                 {
@@ -547,7 +548,7 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if (!board.isMoveValid(start, end, isWhite()))
+                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }

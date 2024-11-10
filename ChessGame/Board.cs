@@ -32,7 +32,7 @@ namespace ChessGame
             resetBoard();
         }
 
-        public bool isMoveValid(Spot start, Spot end, bool isWhite)
+        public bool willMovePutKingInCheck(Spot start, Spot end, bool isWhite)
         {
             //saves the original pieces to move them back after the simulation 
             Piece originalStartPiece = start.GetPiece();
@@ -60,16 +60,6 @@ namespace ChessGame
             {
                 MarkThreats(piece);
             }
-
-            for (int i = 0; i < 8; i++)
-            {
-                for (int j = 0; j < 8; j++)
-                {
-                    Debug.Write(threatMap[i, j] ? "1 " : "0 ");
-                }
-                Debug.WriteLine("");
-            }
-
         }
 
         private void ClearThreatMap()
@@ -113,7 +103,6 @@ namespace ChessGame
 
                 if (position == null)
                 {
-                    Debug.WriteLine($"Piece that cannot be found: {piece} Piece location: {piece.getCurrentPosition()}");
                     throw new InvalidOperationException("Piece not found on the board");
                 }
 
