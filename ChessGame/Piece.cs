@@ -22,7 +22,6 @@ namespace ChessGame
         public Piece(bool white)
         {
             this.setWhite(white);
-            this.type = type;
             this.currentPosition = null;
         }
 
@@ -158,7 +157,7 @@ namespace ChessGame
 
             public bool canCastleQueenside(bool isWhite, Board board)
             {
-                int row = isWhite ? 0 : 7;
+                int row = isWhite ? 7 : 0;
 
                 Spot rookSpot = board.getSpot(row, 0);
                 Spot kingSpot = board.getSpot(row, 4);

@@ -103,7 +103,7 @@ namespace ChessGame
 
                 if (position == null)
                 {
-                    throw new InvalidOperationException("Piece not found on the board");
+                    throw new InvalidOperationException($"Piece not found on the board: {piece} Location: {position}");
                 }
 
 
