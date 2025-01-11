@@ -8,10 +8,16 @@ namespace SwissBracket
 {
     public class Match
     {
-            public Team Team1 { get; set; }
-            public Team Team2 { get; set; }
-            public Team Winner { get; set; }
-            public Team Loser { get; set; }
-            public bool isMatchPlayed { get; set; }
+        public Team Team1 { get; set; }
+        public Team Team2 { get; set; }
+        public Team Winner { get; set; }
+        public Team Loser { get; set; }
+        public bool IsMatchPlayed { get; set; }
+
+
+        public Match()
+        {
+            IsMatchPlayed = false;
         }
+    }
     }

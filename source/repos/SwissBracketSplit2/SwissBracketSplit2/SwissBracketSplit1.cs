@@ -6,10 +6,11 @@ namespace SwissBracket
 {
     class Split1Sim
     {
-        public Split1Sim() { } 
+        public Split1Sim() { }
         public void runSplit1Sim()
         {
-            List<Team> teams = InitializeTeams();
+            List<Team> group1Teams = InitializeTeamsGroup1();
+            List<Team> group2Teams = InitializeTeamsGroup2();
             List<Team> winnersGroup = new List<Team>();
             List<Team> losersGroup = new List<Team>();
 
@@ -19,14 +20,14 @@ namespace SwissBracket
             {
                 Console.WriteLine($"\nSimulation {i + 1}:\n");
 
-                // Run the tournament simulation
-                SimulateTournament(teams, winnersGroup, losersGroup);
+                // Run the tourNament simulation
+                SimulateTourNament(group1Teams, winnersGroup, losersGroup);
 
                 // Output results for the current simulation
                 OutputResults(winnersGroup, losersGroup);
                 SimulateKnockoutStage(winnersGroup);
                 // Reset teams for the next simulation
-                ResetTeams(teams);
+                ResetTeams(group1Teams);
 
                 // Clear the winners and losers groups for the next simulation
                 winnersGroup.Clear();
@@ -34,11 +35,34 @@ namespace SwissBracket
             }
 
             // Output the final cumulative points after all simulations
-            Console.WriteLine("\nFinal Cumulative Points After 3 Simulations:");
+            Console.WriteLine("\nFinal Cumulative Points After 3 Simulations for Group 1:");
             Console.WriteLine("=============================================");
-            foreach (var team in teams.OrderBy(t => t.name))
+            foreach (var team in group1Teams.OrderBy(t => t.Name))
             {
-                Console.WriteLine($"{team.name} - Total Points: {team.Points}");
+                Console.WriteLine($"{team.Name} - Total Points: {team.Points}");
+            }
+
+            for (int i = 0; i < totalSimulations; i++)
+            {
+                Console.WriteLine($"\nSimulation {i + 1}:\n");
+
+                SimulateTourNament(group2Teams, winnersGroup, losersGroup);
+
+                OutputResults(winnersGroup, losersGroup);
+                SimulateKnockoutStage(winnersGroup);
+
+                ResetTeams(group2Teams);
+
+                winnersGroup.Clear();
+                losersGroup.Clear();
+            }
+
+            // Output the final cumulative points after all simulations
+            Console.WriteLine("\nFinal Cumulative Points After 3 Simulations for Group 2:");
+            Console.WriteLine("=============================================");
+            foreach (var team in group2Teams.OrderBy(t => t.Name))
+            {
+                Console.WriteLine($"{team.Name} - Total Points: {team.Points}");
             }
 
             // Wait for user input before closing
@@ -57,60 +81,58 @@ namespace SwissBracket
 
 
 
-        static List<Team> InitializeTeams()
+        static List<Team> InitializeTeamsGroup1()
         {
             List<Team> teams = new List<Team>
             {
-                /*
-                  // Group 1
-                  new Team("Arsenal"),
-                  new Team("Atletico"),
-                  new Team("Bayern Munich"),
-                  new Team("Bergamo Calcio"),
-                  new Team("Brazil"),
-                  new Team("Chelsea"),
-                  new Team("England"),
-                  new Team("Inter"),
-                  new Team("Inter Miami"),
-                  new Team("Italy"),
-                  new Team("Manchester City"),
-                  new Team("Portugal"),
-                  new Team("PSG"),
-                  new Team("Real Sociedad"),
-                  new Team("Spain"),
-                  new Team("Villarreal CF"),
-
-                  //---------------------------//
-                  // separation of teams //
-                  //---------------------------//
-                  //*/
-
-               //*
-                // Group 2
-                new Team("Adidas All Stars"),
-                new Team("Argentina"),
-                new Team("Belgium"),
-                new Team("Barcelona"),
-                new Team("Dortmund"),
-                new Team("Manchester United"),
-                new Team("France"),
-                new Team("Germany"),
-                new Team("New England"),
-                new Team("Liverpool"),
-                new Team("Napoli"),
-                new Team("Real Madrid"),
-                new Team("Leicester City"),
-                new Team("RB Leipzig"),
-                new Team("Soccer Aid"),
-                new Team("Spurs"),
-
-             //*/
+        // Group 1
+        
+                new Team("Brazil", 1975),
+                new Team("Italy", 1950),
+                new Team("Inter Miami", 2300),   // High Elo based on your preferences
+                new Team("Real Madrid", 1985),
+                new Team("Bergamo Calcio", 1935),
+                new Team("Spain", 1950),
+                new Team("Liverpool", 1930),
+                new Team("Atletico", 1925),
+                new Team("Manchester United", 1940),
+                new Team("Soccer Aid", 2300),    // Highest Elo based on your preferences
+                new Team("Dortmund", 1935),
+                new Team("England", 1960),
+                new Team("RB Leipzig", 1880),
+                new Team("Spurs", 1915),
+                new Team("Bayern Munich", 1950),
+                new Team("Manchester City", 1945)
             };
-
-
 
             return teams;
         }
+
+        static List<Team> InitializeTeamsGroup2()
+        {
+            List<Team> group2 = new List<Team>
+            {
+                new Team("Adidas All Stars", 2240),   // High Elo based on your preferences
+                new Team("Inter", 1900),
+                new Team("Villarreal CF", 1890),
+                new Team("Belgium", 1945),
+                new Team("Portugal", 1975),
+                new Team("France", 1965),
+                new Team("Napoli", 1925),
+                new Team("Real Sociedad", 1910),
+                new Team("PSG", 1940),
+                new Team("Germany", 1960),
+                new Team("Argentina", 1960),
+                new Team("Chelsea", 1930),
+                new Team("Barcelona", 1950),
+                new Team("Arsenal", 1915),
+                new Team("New England", 2400),   // Highest Elo based on your preferences
+                new Team("Leicester City", 1875)
+            };
+
+            return group2;
+        }
+
 
         static List<Match> InitializeMatches(List<Team> teams)
         {
@@ -125,7 +147,7 @@ namespace SwissBracket
             return matches;
         }
 
-        static void SimulateTournament(List<Team> teams, List<Team> winnersGroup, List<Team> losersGroup)
+        static void SimulateTourNament(List<Team> teams, List<Team> winnersGroup, List<Team> losersGroup)
         {
             Random rand = new Random();
             int round = 1;
@@ -181,7 +203,7 @@ namespace SwissBracket
                 match.Team1.Losses++;
             }
 
-            match.isMatchPlayed = true;
+            match.IsMatchPlayed = true;
         }
 
 
@@ -193,7 +215,7 @@ namespace SwissBracket
             Console.WriteLine("===================\n");
 
             // Sort losersGroup by number of wins and then alphabetically
-            var groupedLosers = losersGroup.OrderBy(t => t.Wins).ThenBy(t => t.name);
+            var groupedLosers = losersGroup.OrderBy(t => t.Wins).ThenBy(t => t.Name);
 
 
 
@@ -228,7 +250,7 @@ namespace SwissBracket
                     team.Points += 5;
                 }
 
-                Console.WriteLine($"{team.name} - Wins: {team.Wins}, Losses: {team.Losses}");
+                Console.WriteLine($"{team.Name} - Wins: {team.Wins}, Losses: {team.Losses}");
                 Console.WriteLine("---------------------------");
             }
 
@@ -261,13 +283,13 @@ namespace SwissBracket
                 match.Loser.Points += 6;
             }
 
-            // Sort quarterfinals by loser's name alphabetically
-            var sortedQuarterfinals = quarterfinals.OrderBy(m => m.Loser != null ? m.Loser.name : "");
+            // Sort quarterfinals by loser's Name alphabetically
+            var sortedQuarterfinals = quarterfinals.OrderBy(m => m.Loser != null ? m.Loser.Name : "");
 
             // Print quarterfinal results alphabetically by loser
             foreach (var match in sortedQuarterfinals)
             {
-                Console.WriteLine($"QF: {match.Team1.name} vs {match.Team2.name} - Loser: {(match.Loser != null ? match.Loser.name : "Not determined yet")}");
+                Console.WriteLine($"QF: {match.Team1.Name} vs {match.Team2.Name} - Loser: {(match.Loser != null ? match.Loser.Name : "Not determined yet")}");
                 Console.WriteLine("---------------------------");
                 Console.WriteLine();
             }
@@ -288,13 +310,13 @@ namespace SwissBracket
                 match.Loser.Points += 9;
             }
 
-            // Sort semifinals by loser's name alphabetically
-            var sortedSemifinals = semifinals.OrderBy(m => m.Loser != null ? m.Loser.name : "");
+            // Sort semifinals by loser's Name alphabetically
+            var sortedSemifinals = semifinals.OrderBy(m => m.Loser != null ? m.Loser.Name : "");
 
             // Print semifinal results alphabetically by loser
             foreach (var match in sortedSemifinals)
             {
-                Console.WriteLine($"SF: {match.Team1.name} vs {match.Team2.name} - Loser: {(match.Loser != null ? match.Loser.name : "Not determined yet")}");
+                Console.WriteLine($"SF: {match.Team1.Name} vs {match.Team2.Name} - Loser: {(match.Loser != null ? match.Loser.Name : "Not determined yet")}");
                 Console.WriteLine("---------------------------");
                 Console.WriteLine();
             }
@@ -307,15 +329,15 @@ namespace SwissBracket
             Match final = new Match { Team1 = finalists[0], Team2 = finalists[1] };
             SimulateMatch(final, rand);
             final.Winner.Points += 16;
-            Console.WriteLine($"Final: {final.Team1.name} vs {final.Team2.name}");
+            Console.WriteLine($"Final: {final.Team1.Name} vs {final.Team2.Name}");
             Console.WriteLine("---------------------------");
-            Console.WriteLine($"Winner: {final.Winner.name}");
+            Console.WriteLine($"Winner: {final.Winner.Name}");
             Console.WriteLine();
 
             // Display the runner-up
             Team runnerUp = finalists.First(team => team != final.Winner);
             runnerUp.Points += 12;
-            Console.WriteLine($"Runner-Up: {runnerUp.name}");
+            Console.WriteLine($"Runner-Up: {runnerUp.Name}");
             Console.WriteLine();
         }
     }
