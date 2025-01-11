@@ -22,7 +22,9 @@ namespace ChessGame
         public Piece(bool white)
         {
             this.setWhite(white);
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             this.currentPosition = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
         public bool isWhite() { return this.white; }
@@ -86,7 +88,7 @@ namespace ChessGame
             }
 
             private bool _hasMoved = false;
-            
+
             public bool hasMoved
             {
                 get { return _hasMoved; ; }
@@ -225,7 +227,7 @@ namespace ChessGame
                 // White pawn moves
                 if (isWhite())
                 {
-                    
+
                     // Forward move by 1
                     if (rowDifference == -1 && columnDifference == 0 && end.GetPiece() == null)
                     {
@@ -244,17 +246,20 @@ namespace ChessGame
                     }
 
                     //En passant capture move
-                    if (rowDifference == -1 && columnDifference == 1 && end.GetPiece() == null)
+                    if (rowDifference == -1 && (columnDifference == 1 || columnDifference == -1) && end.GetPiece() == null)
                     {
-                        int adjacentRow = end.GetRow() + 1;
-                        int adjacentColumn = end.GetColumn();
-                        Spot adjacentSpot = board.getSpot(adjacentRow, adjacentColumn);
-
-                        if(adjacentSpot != null && adjacentSpot.GetPiece() is Pawn adjacentPawn && !adjacentPawn.isWhite() && adjacentPawn.isEnPassant)
+                        try
                         {
-                            adjacentSpot.SetPiece(null);
-                            board.capturePiece(adjacentPawn);
-                            return true;
+                            Spot enPassantSpot = board.getSpot(end.GetRow() + 1, end.GetColumn());
+                            Piece enPassantPiece = enPassantSpot?.GetPiece();
+
+                            if (enPassantPiece != null && enPassantPiece is Pawn pawn && pawn.isEnPassant && !pawn.isWhite())
+                            {
+                                return true;
+                            }
+                        }catch(NullReferenceException e)
+                        {
+                            Console.WriteLine("En passant piece does not exist at given location " + e.Message);
                         }
                     }
                 }
@@ -278,18 +283,24 @@ namespace ChessGame
                     {
                         return true;
                     }
-
                     //En passant capture move
-                    if(rowDifference == 1 && columnDifference == 1 && end.GetPiece() == null) {
-                        int adjacentRow = end.GetRow() - 1;
-                        int adjacentColumn = end.GetColumn();
-                        Spot adjacentSpot = board.getSpot(adjacentRow, adjacentColumn);
-
-                        if(adjacentSpot != null && adjacentSpot.GetPiece() is Pawn adjacentPawn && adjacentPawn.isWhite() && adjacentPawn.isEnPassant)
+                    if (rowDifference == 1 && (columnDifference == 1 || columnDifference == -1) && end.GetPiece() == null)
+                    {
+                        try
                         {
-                            return true;
-                        }
+                            Spot enPassantSpot = board.getSpot(end.GetRow() + 1, end.GetColumn());
+                            Piece enPassantPiece = enPassantSpot?.GetPiece();
 
+                            if (enPassantPiece != null && enPassantPiece is Pawn pawn && pawn.isEnPassant && !pawn.isWhite())
+                            {
+                                Debug.WriteLine("Black Pawn attempting en passant capture");
+                                return true;
+                            }
+                        }
+                        catch (NullReferenceException e)
+                        {
+                            Console.WriteLine("En passant piece does not exist at given location " + e.Message);
+                        }
                     }
                 }
 
@@ -320,8 +331,9 @@ namespace ChessGame
             //checks if the rook has moved for castling
             private bool _hasMoved = false;
 
-            public bool hasMoved { 
-                get { return _hasMoved; } 
+            public bool hasMoved
+            {
+                get { return _hasMoved; }
                 set { _hasMoved = value; }
             }
 
@@ -353,9 +365,9 @@ namespace ChessGame
 
                 if (board.isKingInCheck(isWhite()))
                 {
-                    if(!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
                     {
-                        return false; 
+                        return false;
                     }
                 }
 
@@ -367,7 +379,7 @@ namespace ChessGame
 
                 return true;
             }
-            
+
             public static bool legalRookMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
                 int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);

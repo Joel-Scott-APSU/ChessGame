@@ -23,7 +23,9 @@ namespace ChessGame
                 boxes[i] = new Spot[8];
                 for (int j = 0; j < 8; j++)
                 {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     boxes[i][j] = new Spot(i, j, null); // Initialize all spots as null
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
 
@@ -40,7 +42,9 @@ namespace ChessGame
 
             //moves the pieces to simulate the movement and check if the king is in check 
             end.SetPiece(originalStartPiece);
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             start.SetPiece(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             //check if the move puts the king in check
             bool kingInCheck = isKingInCheck(isWhite);
@@ -393,7 +397,9 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     boxes[i][j] = new Spot(i, j, null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
         }
@@ -414,7 +420,9 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     boxes[i][j] = new Spot(i, j, null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
 

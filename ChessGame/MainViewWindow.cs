@@ -168,7 +168,9 @@ namespace ChessGame
                 }
 
                 selectedSquare.IsHighlighted = false;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 selectedSquare = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
             }
         }
 
@@ -178,7 +180,9 @@ namespace ChessGame
         {
             // Perform the move logic
             toSquare.PieceImage = fromSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             fromSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             // Update UI after move
             OnPropertyChanged(nameof(ChessBoardSquares));
@@ -200,12 +204,16 @@ namespace ChessGame
             // If the enPassantSquare is found, clear the piece image from it
             if (enPassantSquare != null)
             {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 enPassantSquare.PieceImage = null; // This should clear the image from the UI
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
             }
 
             // Move the piece image to the toSquare
             toSquare.PieceImage = fromSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             fromSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             // Notify that the ChessBoardSquares collection has changed, triggering a UI update
             OnPropertyChanged(nameof(ChessBoardSquares));
@@ -215,11 +223,15 @@ namespace ChessGame
         {
             ChessBoardSquare kingCastlingSquare = FindSquare(kingSquare.row, kingSquare.column + 2);
             kingCastlingSquare.PieceImage = kingSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             kingSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             ChessBoardSquare rookCastlingSquare = FindSquare(rookSquare.row, kingCastlingSquare.column - 1);
             rookCastlingSquare.PieceImage = rookSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             rookSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
@@ -228,11 +240,15 @@ namespace ChessGame
         {
             ChessBoardSquare kingCastlingSquare = FindSquare(kingSquare.row, kingSquare.column - 2);
             kingCastlingSquare.PieceImage = kingSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             kingSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             ChessBoardSquare rookCastlingSquare = FindSquare(rookSquare.row, kingCastlingSquare.column + 1);
             rookCastlingSquare.PieceImage = rookSquare.PieceImage;
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             rookSquare.PieceImage = null;
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             OnPropertyChanged(nameof(ChessBoardSquares));
         }

@@ -28,33 +28,36 @@ namespace ChessGame
             int toRow = toSquare.row;
             int toColumn = toSquare.column;
             int enPassantRow = currentTurn.IsWhite ? toSquare.row + 1 : toSquare.row - 1;
-            bool enPassantResult = false;
-            Piece capturedPiece = null;
-            Piece enPassantPiece = null;
+            bool enPassantResult;
+            Piece? capturedPiece = null;
+            Spot? enPassantSpot = null;
+            Piece? enPassantPiece = enPassantSpot?.GetPiece();
 
             Spot start = board.getSpot(fromRow, fromColumn);
             Spot end = board.getSpot(toRow, toColumn);
 
-            if (enPassantRow > 0 && enPassantRow < 7)
+            if (enPassantRow > 0 && enPassantRow < 7 && board.getSpot(enPassantRow, toColumn).GetPiece() != null)
             {
                 enPassantPiece = board.getSpot(enPassantRow, toColumn).GetPiece();
             }
 
-            Piece movingPiece = start.GetPiece();
+            Piece movingPiece = start?.GetPiece();
 
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
                 return (false, false, false, false);
             }
 
-            if (!board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
+            else if (!board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
                 return (false, false, false, false);
             }
 
             if (movingPiece.legalMove(board, start, end))
             {
-                (Piece enPassantCapturedPiece, enPassantResult) = enPassantCapture(enPassantPiece, movingPiece, toSquare, fromSquare);
+#pragma warning disable CS8604 // Possible null reference argument.
+                (Piece enPassantCapturedPiece, enPassantResult) = enPassantCapture(movingPiece, toSquare, board);
+#pragma warning restore CS8604 // Possible null reference argument.
 
                 if (enPassantResult)
                 {
@@ -81,7 +84,9 @@ namespace ChessGame
                 }
 
                 end.SetPiece(movingPiece);
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 start.SetPiece(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
                 movingPiece.setCurrentPosition(end);
 
@@ -96,8 +101,12 @@ namespace ChessGame
                 {
                     if (CastleKingSide(movingPiece, toSquare, fromSquare, board))
                     {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                         start.SetPiece(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                         end.SetPiece(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                         swapTurn();
                         return (false, false, true, false);
                     }
@@ -106,8 +115,10 @@ namespace ChessGame
                 {
                     if (CastleQueenSide(movingPiece, toSquare, fromSquare, board))
                     {
+#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                         start.SetPiece(null);
                         end.SetPiece(null);
+#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                         swapTurn();
                         return (false, false, false, true);
                     }
@@ -117,45 +128,24 @@ namespace ChessGame
 
             return (false, false, false, false);
         }
-        private (Piece, bool) enPassantCapture(Piece enPassantPiece, Piece movingPiece, ChessBoardSquare toSquare, ChessBoardSquare fromSquare)
+
+        private (Piece, bool) enPassantCapture(Piece movingPiece, ChessBoardSquare toSquare, Board board)
         {
-            // Ensure that the moving piece is a pawn
-            if (movingPiece is not Piece.Pawn movingPawn)
+            if(movingPiece is Piece.Pawn pawn)
             {
-                Debug.WriteLine("Testing en Passant Method 1");
-                return (null, false);
+                Debug.WriteLine(pawn.isEnPassant);
+                int direction = movingPiece.isWhite() ? -1 : 1;
+                Spot enPassantSpot = board.getSpot(toSquare.row + direction, toSquare.column);
+                Piece enPassantPiece = enPassantSpot?.GetPiece();
+                if(enPassantPiece is Piece.Pawn enPassantPawn)
+                {
+                    if(enPassantPawn.isEnPassant && enPassantPawn.isWhite() != movingPiece.isWhite())
+                    {
+                        return (enPassantPiece, true);
+                    }
+                }
             }
 
-            Piece capturedPiece = null;
-            Spot end = game.board.getSpot(toSquare.row, toSquare.column);
-
-            // Calculate enPassantRow with boundary check
-            int enPassantRow = game.currentTurn.IsWhite ? toSquare.row + 1 : toSquare.row - 1;
-            if (enPassantRow < 0 || enPassantRow > 7)
-            {
-                Debug.WriteLine("Testing en Passant Method 2");
-                return (null, false);
-            }
-
-            if(enPassantPiece is Piece.Pawn)
-            {
-                Debug.WriteLine("1");
-            }
-            else
-            {
-                Debug.WriteLine("2");
-            }
-            // Ensure that the en passant piece is also a pawn
-            if (enPassantPiece is Piece.Pawn enPassantPawn && enPassantPawn.isEnPassant)
-            {
-                Debug.WriteLine("Testing en Passant Method 3");
-                Spot enPassantSpot = game.board.getSpot(enPassantRow, toSquare.column);
-                enPassantSpot.SetPiece(null);
-                end.SetPiece(movingPiece);
-                capturedPiece = enPassantPawn;
-            }
-
-            Debug.WriteLine("Testing en Passant Method 4");
             return (null, false);
         }
 
@@ -219,15 +209,17 @@ namespace ChessGame
                 (bool canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, game.currentTurn.getPieces());
             }
 
-            game.SetCurrentTurn(game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer);
-
-            foreach (Piece enPassant in game.currentTurn.getPieces())
+            Player oppositePlayer = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
+            List<Piece> playerPieces = oppositePlayer.getPieces();
+            foreach (Piece piece in playerPieces)
             {
-                if (enPassant is Piece.Pawn pawn && pawn.isWhite() == game.currentTurn.IsWhite)
+                if(piece is Piece.Pawn pawn)
                 {
                     pawn.isEnPassant = false;
                 }
             }
+
+            game.SetCurrentTurn(oppositePlayer);
         }
 
     }
