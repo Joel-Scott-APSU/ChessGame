@@ -35,11 +35,11 @@ namespace ChessGame.Tests
             Piece whiteBishop = new Piece.Bishop(true);
 
             board.clearBoard();
-            board.createPieces(whiteBishop, 5, 5, whitePlayer);
-            board.createPieces(blackKing, 7, 4, blackPlayer);
-            board.createPieces(whiteQueen, 6, 4, whitePlayer);
+            board.CreatePieces(whiteBishop, 5, 5, whitePlayer);
+            board.CreatePieces(blackKing, 7, 4, blackPlayer);
+            board.CreatePieces(whiteQueen, 6, 4, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -55,13 +55,13 @@ namespace ChessGame.Tests
             Piece blackKing = new Piece.King(false);
             Piece whiteQueen = new Piece.Queen(true);
 
-            board.createPieces(whiteKing, 0, 2, whitePlayer);
-            board.createPieces(blackKing, 0, 0, blackPlayer);
-            board.createPieces(whiteQueen, 0, 1, whitePlayer);
+            board.CreatePieces(whiteKing, 0, 2, whitePlayer);
+            board.CreatePieces(blackKing, 0, 0, blackPlayer);
+            board.CreatePieces(whiteQueen, 0, 1, whitePlayer);
 
-            board.updateThreatMap(whitePlayer.getPieces()); // Update the threat map
+            board.UpdateThreatMap(whitePlayer.GetPieces()); // Update the threat map
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces()); // Check for legal moves for black king
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces()); // Check for legal moves for black king
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -77,12 +77,12 @@ namespace ChessGame.Tests
             Piece whiteKing = new Piece.King(true);
 
             board.clearBoard();
-            board.createPieces(whiteKing, 6, 6, whitePlayer);
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteQueen1, 5, 6, whitePlayer);
-            board.createPieces(whiteQueen2, 6, 5, whitePlayer);
+            board.CreatePieces(whiteKing, 6, 6, whitePlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteQueen1, 5, 6, whitePlayer);
+            board.CreatePieces(whiteQueen2, 6, 5, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -97,12 +97,12 @@ namespace ChessGame.Tests
             Piece whiteKing = new Piece.King(true);
 
             board.clearBoard();
-            board.createPieces(whiteKing, 5, 5, whitePlayer);
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteQueen, 6, 6, whitePlayer);
-            board.createPieces(whiteRook, 7, 6, whitePlayer);
+            board.CreatePieces(whiteKing, 5, 5, whitePlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteQueen, 6, 6, whitePlayer);
+            board.CreatePieces(whiteRook, 7, 6, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, whitePlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, whitePlayer.GetPieces());
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -117,12 +117,12 @@ namespace ChessGame.Tests
             Piece whiteKing = new Piece.King(true);
 
             board.clearBoard();
-            board.createPieces(whiteKing, 5, 5, whitePlayer);
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteRook, 6, 6, whitePlayer);
-            board.createPieces(whiteQueen, 7, 6, whitePlayer);
+            board.CreatePieces(whiteKing, 5, 5, whitePlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 6, 6, whitePlayer);
+            board.CreatePieces(whiteQueen, 7, 6, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -136,12 +136,12 @@ namespace ChessGame.Tests
             Piece blackBishop = new Piece.Bishop(false);
 
             board.clearBoard();
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteRook, 7, 5, whitePlayer);
-            board.createPieces(blackBishop, 6, 6, blackPlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 7, 5, whitePlayer);
+            board.CreatePieces(blackBishop, 6, 6, blackPlayer);
 
             // The black bishop should be able to capture the white rook on F8
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsTrue(result, "Black should be able to capture the rook with the bishop and escape checkmate.");
         }
@@ -156,11 +156,11 @@ namespace ChessGame.Tests
             Piece whiteKing = new Piece.King(true);
 
             board.clearBoard();
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteRook, 7, 6, whitePlayer);
-            board.createPieces(whiteKing, 5, 6, whitePlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 7, 6, whitePlayer);
+            board.CreatePieces(whiteKing, 5, 6, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsTrue(result, "Black should be able to capture the rook and escape checkmate.");
         }
@@ -174,11 +174,11 @@ namespace ChessGame.Tests
             Piece whiteRook = new Piece.Rook(true);
 
             board.clearBoard();
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteQueen, 7, 5, whitePlayer);
-            board.createPieces(whiteRook, 5, 5, whitePlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteQueen, 7, 5, whitePlayer);
+            board.CreatePieces(whiteRook, 5, 5, whitePlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsTrue(result, "Black should be able to move to H7 and escape checkmate.");
         }
@@ -191,11 +191,11 @@ namespace ChessGame.Tests
             Piece blackRook = new Piece.Rook(false);
 
             board.clearBoard();
-            board.createPieces(blackKing, 7, 7, blackPlayer);
-            board.createPieces(whiteRook, 7, 5, whitePlayer);
-            board.createPieces(blackRook, 5, 6, blackPlayer);
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 7, 5, whitePlayer);
+            board.CreatePieces(blackRook, 5, 6, blackPlayer);
 
-            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.getPieces());
+            (bool result, Spot spot) = moves.checkForLegalMoves(blackPlayer, board, blackPlayer.GetPieces());
 
             Assert.IsTrue(result, "Black should be able to block the checkmate with the Rook.");
         }
@@ -211,35 +211,35 @@ namespace ChessGame.Tests
             Pawn blackPawn = new Pawn(false);
 
             // Place kings back on the board after clearing
-            board.createPieces(new King(true), 0, 4, whitePlayer);
-            board.createPieces(new King(false), 7, 4, blackPlayer);
+            board.CreatePieces(new King(true), 0, 4, whitePlayer);
+            board.CreatePieces(new King(false), 7, 4, blackPlayer);
 
             // Place white pawn at its starting position
-            board.createPieces(whitePawn, 6, 4, whitePlayer);
+            board.CreatePieces(whitePawn, 6, 4, whitePlayer);
             // Place black pawn at its starting position
-            board.createPieces(blackPawn, 1, 5, blackPlayer);
+            board.CreatePieces(blackPawn, 1, 5, blackPlayer);
 
             // Move white pawn two squares forward (this should set it up for en passant)
-            Spot startSpot = board.getSpot(6, 4);
-            Spot endSpot = board.getSpot(4, 4); // Moving to row 4 from row 6
+            Spot startSpot = board.GetSpot(6, 4);
+            Spot endSpot = board.GetSpot(4, 4); // Moving to row 4 from row 6
             whitePawn.legalMove(board, startSpot, endSpot);
 
             // Check that the white pawn is set for en passant
             Assert.IsTrue(whitePawn.isEnPassant, "White pawn should be marked for en passant after moving two squares forward.");
 
             // Move black pawn next to white pawn
-            Spot blackStartSpot = board.getSpot(1, 5);
-            Spot blackEndSpot = board.getSpot(2, 5); // Moving to row 2 from row 1
+            Spot blackStartSpot = board.GetSpot(1, 5);
+            Spot blackEndSpot = board.GetSpot(2, 5); // Moving to row 2 from row 1
             blackPawn.legalMove(board, blackStartSpot, blackEndSpot);
 
             // Now try en passant move
-            Spot enPassantSpot = board.getSpot(4, 5); // The spot where the white pawn will be captured en passant
-            Spot captureSpot = board.getSpot(5, 4); // The destination spot for the black pawn capturing en passant
+            Spot enPassantSpot = board.GetSpot(4, 5); // The spot where the white pawn will be captured en passant
+            Spot captureSpot = board.GetSpot(5, 4); // The destination spot for the black pawn capturing en passant
             bool moveResult = blackPawn.legalMove(board, blackEndSpot, captureSpot);
 
             // Check that the black pawn can capture the white pawn en passant
             Assert.IsTrue(moveResult, "Black pawn should be able to capture white pawn en passant.");
-            Assert.IsNull(board.getSpot(4, 4).GetPiece(), "The white pawn should be removed from the board after en passant.");
+            Assert.IsNull(board.GetSpot(4, 4).Piece, "The white pawn should be removed from the board after en passant.");
         }
 
         [TestMethod]
@@ -253,12 +253,12 @@ namespace ChessGame.Tests
             Piece whiteRook = new Piece.Rook(true);
 
             // Place the King and Rook on their initial positions
-            board.createPieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
-            board.createPieces(whiteRook, 7, 7, whitePlayer); // Rook at H1 (7,7)
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
+            board.CreatePieces(whiteRook, 7, 7, whitePlayer); // Rook at H1 (7,7)
 
             // Ensure the spaces between the King and Rook are clear and no threat is posed
-            board.getSpot(7, 5).SetPiece(null); // F1
-            board.getSpot(7, 6).SetPiece(null); // G1
+            board.GetSpot(7, 5).Piece = null; // F1
+            board.GetSpot(7, 6).Piece = null; // G1
 
             // Attempt to castle kingside
             ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
@@ -268,9 +268,9 @@ namespace ChessGame.Tests
 
             // Assert that kingside castling was successful
             Assert.IsTrue(castledKingSide, "White should be able to castle kingside.");
-            Assert.IsNull(board.getSpot(7, 4).GetPiece(), "The King's original spot (E1) should be empty.");
-            Assert.IsNotNull(board.getSpot(7, 6).GetPiece(), "The King should be moved to G1.");
-            Assert.IsNotNull(board.getSpot(7, 5).GetPiece(), "The Rook should be moved to F1.");
+            Assert.IsNull(board.GetSpot(7, 4).Piece, "The King's original spot (E1) should be empty.");
+            Assert.IsNotNull(board.GetSpot(7, 6).Piece, "The King should be moved to G1.");
+            Assert.IsNotNull(board.GetSpot(7, 5).Piece, "The Rook should be moved to F1.");
         }
 
         [TestMethod]
@@ -284,13 +284,13 @@ namespace ChessGame.Tests
             Piece whiteRook = new Piece.Rook(true);
 
             // Place the King and Rook on their initial positions
-            board.createPieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
-            board.createPieces(whiteRook, 7, 0, whitePlayer); // Rook at A1 (7,0)
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
+            board.CreatePieces(whiteRook, 7, 0, whitePlayer); // Rook at A1 (7,0)
 
             // Ensure the spaces between the King and Rook are clear and no threat is posed
-            board.getSpot(7, 1).SetPiece(null); // B1
-            board.getSpot(7, 2).SetPiece(null); // C1
-            board.getSpot(7, 3).SetPiece(null); // D1
+            board.GetSpot(7, 1).Piece = null; // B1
+            board.GetSpot(7, 2).Piece = null; // C1
+            board.GetSpot(7, 3).Piece = null; // D1
 
             // Attempt to castle queenside
             ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
@@ -300,9 +300,9 @@ namespace ChessGame.Tests
 
             // Assert that queenside castling was successful
             Assert.IsTrue(castledQueenSide, "White should be able to castle queenside.");
-            Assert.IsNull(board.getSpot(7, 4).GetPiece(), "The King's original spot (E1) should be empty.");
-            Assert.IsNotNull(board.getSpot(7, 2).GetPiece(), "The King should be moved to C1.");
-            Assert.IsNotNull(board.getSpot(7, 3).GetPiece(), "The Rook should be moved to D1.");
+            Assert.IsNull(board.GetSpot(7, 4).Piece, "The King's original spot (E1) should be empty.");
+            Assert.IsNotNull(board.GetSpot(7, 2).Piece, "The King should be moved to C1.");
+            Assert.IsNotNull(board.GetSpot(7, 3).Piece, "The Rook should be moved to D1.");
         }
 
     }

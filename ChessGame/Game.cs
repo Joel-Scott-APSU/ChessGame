@@ -22,16 +22,19 @@ namespace ChessGame
 
         public Game()
         {
-            initializeGame();
             gameRules = new GameRules(this);
+            initializeGame();
+            gameRules.InitializeActivePieces();
         }
 
         private void initializeGame()
         {
-            whitePlayer = new Player(true);
-            blackPlayer = new Player(false);
-            board = new Board(whitePlayer, blackPlayer);
-            moves = new Moves(whitePlayer, blackPlayer);
+            whitePlayer = new Player(true, gameRules);
+            blackPlayer = new Player(false, gameRules);
+            board = new Board(whitePlayer, blackPlayer, gameRules);
+            moves = new Moves(whitePlayer, blackPlayer, gameRules);
+            whitePlayer.clearCapturedPieces();
+            blackPlayer.clearCapturedPieces();
             currentTurn = whitePlayer;
         }
 

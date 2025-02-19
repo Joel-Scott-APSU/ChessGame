@@ -9,14 +9,15 @@ namespace ChessGame
     {
         private Player whitePlayer;
         private Player blackPlayer;
-
-        public Moves(Player whitePlayer, Player blackPlayer)
+        private GameRules gameRules;
+        public Moves(Player whitePlayer, Player blackPlayer, GameRules gameRules)
         {
             this.blackPlayer = blackPlayer;
             this.whitePlayer = whitePlayer;
+            this.gameRules = gameRules;
         }
 
-        public (bool, Spot) checkForLegalMoves(Player player, Board board, List<Piece> pieces)
+        public (bool, Spot) checkForLegalMoves(Player player, Board board, IReadOnlyList<Piece> pieces)
         {
             try
             {
@@ -114,13 +115,13 @@ namespace ChessGame
                 default: return (false, null);
             }
 
-            int pieceRow = start.GetRow() + rowDelta;
-            int pieceCol = start.GetColumn() + colDelta;
+            int pieceRow = start.Row + rowDelta;
+            int pieceCol = start.Column + colDelta;
 
             while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
             {
-                Spot currentSpot = board.getSpot(pieceRow, pieceCol);
-                Piece currentPiece = currentSpot.GetPiece();
+                Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
+                Piece currentPiece = currentSpot.Piece;
 
                 if (currentPiece != null)
                 {
@@ -151,33 +152,33 @@ namespace ChessGame
         private bool TryMoveRook(Spot start, Spot target, Board board, Player player)
         {
             bool isWhite = player.IsWhite;
-            List<Piece> pieces = isWhite ? whitePlayer.getPieces() : blackPlayer.getPieces();
 
-            Piece movedPiece = start.GetPiece();
-            Piece capturedPiece = target.GetPiece();
+            Piece movedPiece = start.Piece;
+            Piece capturedPiece = target.Piece;
 
-            pieces.Remove(capturedPiece);
+            gameRules.RemoveActivePiece(capturedPiece);
 
-            target.SetPiece(movedPiece);
+            target.Piece = movedPiece;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            start.SetPiece(null);
+            start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-            board.updateThreatMap(pieces);
+            board.UpdateThreatMap(gameRules.GetActivePieces(isWhite));
 
-            bool kingSafe = !board.isKingInCheck(isWhite);
+            bool kingSafe = !board.IsKingInCheck(isWhite);
 
-            start.SetPiece(movedPiece);
-            target.SetPiece(capturedPiece);
-            pieces.Add(capturedPiece);
+            start.Piece = movedPiece;
+            target.Piece = capturedPiece;
+            gameRules.AddActivePiece(capturedPiece);
 
             return kingSafe;
         }
 
+
         private (bool, Spot) checkPawnMoves(Player player, Spot start, Board board, Piece pawn)
         {
-            int row = start.GetRow();
-            int col = start.GetColumn();
+            int row = start.Row;
+            int col = start.Column;
             bool isWhite = player.IsWhite;
             int direction = isWhite ? -1 : 1;
 
@@ -186,50 +187,50 @@ namespace ChessGame
                 int newCol = col + colOffset;
                 if (newCol >= 0 && newCol < 8)
                 {
-                    Spot attackSpot = board.getSpot(row + direction, newCol);
-                    Piece attackedPiece = attackSpot.GetPiece();
+                    Spot attackSpot = board.GetSpot(row + direction, newCol);
+                    Piece attackedPiece = attackSpot.Piece;
                     if (attackedPiece != null && attackedPiece.isWhite() != isWhite)
                     {
-                        attackSpot.SetPiece(pawn);
+                        attackSpot.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        start.SetPiece(null);
+                        start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-                        if (!board.isKingInCheck(isWhite))
+                        if (!board.IsKingInCheck(isWhite))
                         {
-                            start.SetPiece(pawn);
-                            attackSpot.SetPiece(attackedPiece);
+                            start.Piece = pawn;
+                            attackSpot.Piece = attackedPiece;
                             return (true, attackSpot);
                         }
 
-                        start.SetPiece(pawn);
-                        attackSpot.SetPiece(attackedPiece);
+                        start.Piece = pawn;
+                        attackSpot.Piece = attackedPiece;
                     }
                 }
             }
 
             if (row + direction >= 0 && row + direction < 8)
             {
-                Spot moveSpot = board.getSpot(row + direction, col);
-                if (moveSpot.GetPiece() == null)
+                Spot moveSpot = board.GetSpot(row + direction, col);
+                if (moveSpot.Piece == null)
                 {
-                    moveSpot.SetPiece(pawn);
+                    moveSpot.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    start.SetPiece(null);
+                    start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-                    if (!board.isKingInCheck(isWhite))
+                    if (!board.IsKingInCheck(isWhite))
                     {
-                        start.SetPiece(pawn);
+                        start.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        moveSpot.SetPiece(null);
+                        moveSpot.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                         return (true, moveSpot);
                     }
 
-                    start.SetPiece(pawn);
+                    start.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    moveSpot.SetPiece(null);
+                    moveSpot.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
@@ -239,26 +240,26 @@ namespace ChessGame
                 int doubleMoveRow = row + 2 * direction;
                 if (doubleMoveRow >= 0 && doubleMoveRow < 8)
                 {
-                    Spot doubleMoveSpot = board.getSpot(doubleMoveRow, col);
-                    if (doubleMoveSpot.GetPiece() == null)
+                    Spot doubleMoveSpot = board.GetSpot(doubleMoveRow, col);
+                    if (doubleMoveSpot.Piece == null)
                     {
-                        doubleMoveSpot.SetPiece(pawn);
+                        doubleMoveSpot.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        start.SetPiece(null);
+                        start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-                        if (!board.isKingInCheck(isWhite))
+                        if (!board.IsKingInCheck(isWhite))
                         {
-                            start.SetPiece(pawn);
+                            start.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                            doubleMoveSpot.SetPiece(null);
+                            doubleMoveSpot.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                             return (true, doubleMoveSpot);
                         }
 
-                        start.SetPiece(pawn);
+                        start.Piece = pawn;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        doubleMoveSpot.SetPiece(null);
+                        doubleMoveSpot.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                     }
                 }
@@ -275,31 +276,31 @@ namespace ChessGame
 
             for (int i = 0; i < rowOffsets.Length; i++)
             {
-                int newRow = start.GetRow() + rowOffsets[i];
-                int newCol = start.GetColumn() + colOffsets[i];
+                int newRow = start.Row + rowOffsets[i];
+                int newCol = start.Column + colOffsets[i];
 
                 if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
                 {
-                    Spot moveSpot = board.getSpot(newRow, newCol);
-                    Piece targetPiece = moveSpot.GetPiece();
+                    Spot moveSpot = board.GetSpot(newRow, newCol);
+                    Piece targetPiece = moveSpot.Piece;
 
                     if (targetPiece == null || targetPiece.isWhite() != isWhite)
                     {
                         Piece capturedPiece = targetPiece;
-                        moveSpot.SetPiece(start.GetPiece());
+                        moveSpot.Piece = start.Piece;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        start.SetPiece(null);
+                        start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-                        if (!board.isKingInCheck(isWhite))
+                        if (!board.IsKingInCheck(isWhite))
                         {
-                            start.SetPiece(moveSpot.GetPiece());
-                            moveSpot.SetPiece(capturedPiece);
+                            start.Piece = moveSpot.Piece;
+                            moveSpot.Piece = capturedPiece;
                             return (true, moveSpot);
                         }
 
-                        start.SetPiece(moveSpot.GetPiece());
-                        moveSpot.SetPiece(capturedPiece);
+                        start.Piece = moveSpot.Piece;
+                        moveSpot.Piece = capturedPiece;
                     }
                 }
             }
@@ -312,7 +313,7 @@ namespace ChessGame
             bool isWhite = player.IsWhite;
             int rows = 0;
             int cols = 0;
-            Piece currentPiece = start.GetPiece();
+            Piece currentPiece = start.Piece;
 
             switch (direction)
             {
@@ -332,13 +333,13 @@ namespace ChessGame
                     return (false, null);
             }
 
-            int pieceRow = start.GetRow() + rows;
-            int pieceCol = start.GetColumn() + cols;
+            int pieceRow = start.Row + rows;
+            int pieceCol = start.Column + cols;
 
             while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
             {
-                Spot currentSpot = board.getSpot(pieceRow, pieceCol);
-                Piece pieceAtSpot = currentSpot.GetPiece();
+                Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
+                Piece pieceAtSpot = currentSpot.Piece;
 
                 if (pieceAtSpot != null)
                 {
@@ -369,18 +370,18 @@ namespace ChessGame
         private bool TryMoveBishop(Spot start, Spot target, Board board, Player player)
         {
             bool isWhite = player.IsWhite;
-            Piece movedPiece = start.GetPiece();
-            Piece capturedPiece = target.GetPiece();
+            Piece movedPiece = start.Piece;
+            Piece capturedPiece = target.Piece;
 
-            target.SetPiece(movedPiece);
+            target.Piece = movedPiece;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            start.SetPiece(null);
+            start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
-            bool kingSafe = !board.isKingInCheck(isWhite);
+            bool kingSafe = !board.IsKingInCheck(isWhite);
 
-            start.SetPiece(movedPiece);
-            target.SetPiece(capturedPiece);
+            start.Piece = movedPiece;
+            target.Piece = capturedPiece;
 
             return kingSafe;
         }
@@ -389,8 +390,7 @@ namespace ChessGame
         {
             int rowDelta = 0;
             int colDelta = 0;
-            Piece currentPiece = start.GetPiece();
-            List<Piece> pieces = player.getPieces();
+            Piece currentPiece = start.Piece;
             bool isWhite = player.IsWhite;
 
             switch (direction)
@@ -406,23 +406,23 @@ namespace ChessGame
                 default: return (false, null);
             }
 
-            int newRow = start.GetRow() + rowDelta;
-            int newCol = start.GetColumn() + colDelta;
+            int newRow = start.Row + rowDelta;
+            int newCol = start.Column + colDelta;
 
-            if (Math.Abs(newRow - start.GetRow()) <= 1 && Math.Abs(newCol - start.GetColumn()) <= 1)
+            if (Math.Abs(newRow - start.Row) <= 1 && Math.Abs(newCol - start.Column) <= 1)
             {
                 if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
                 {
-                    Spot moveSpot = board.getSpot(newRow, newCol);
+                    Spot moveSpot = board.GetSpot(newRow, newCol);
 
                     // Store the original state
                     Spot originalSpot = start;
-                    Piece originalTargetPiece = moveSpot.GetPiece();
+                    Piece originalTargetPiece = moveSpot.Piece;
 
                     // Temporarily move the king
-                    moveSpot.SetPiece(currentPiece);
+                    moveSpot.Piece = currentPiece;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                    originalSpot.SetPiece(null);
+                    originalSpot.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                     currentPiece.setCurrentPosition(moveSpot);
 
@@ -436,18 +436,18 @@ namespace ChessGame
                     }
 
                     // Update the threat map and check if the king is in check
-                    board.updateThreatMap(pieces);
-                    bool isMoveSafe = !board.isKingInCheck(isWhite);
+                    board.UpdateThreatMap(gameRules.GetActivePieces(isWhite));
+                    bool isMoveSafe = !board.IsKingInCheck(isWhite);
 
                     // Revert the move
                     if (originalTargetPiece != null)
                     {
-                        moveSpot.SetPiece(originalTargetPiece); // Restore the captured piece, if any
+                        moveSpot.Piece = originalTargetPiece; // Restore the captured piece, if any
                         originalTargetPiece.setCurrentPosition(moveSpot);
                         player.addPiece(originalTargetPiece);
                     }
 
-                    originalSpot.SetPiece(currentPiece);
+                    originalSpot.Piece = currentPiece;
                     currentPiece.setCurrentPosition(originalSpot);
 
                     if (isMoveSafe)

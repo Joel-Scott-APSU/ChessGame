@@ -15,212 +15,222 @@ namespace ChessGame
     {
         private Game game;
 
+        private HashSet<Piece> activePieces;
         public GameRules(Game game)
         {
             this.game = game;
+            this.activePieces = new HashSet<Piece>();
+        }
+
+        public void InitializeActivePieces()
+        {
+            activePieces = new HashSet<Piece>(game.whitePlayer.GetPieces().Concat(game.blackPlayer.GetPieces()));
         }
         public (bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide) HandleMove(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
             Board board = game.board;
             Player currentTurn = game.currentTurn;
-            int fromRow = fromSquare.row;
-            int fromColumn = fromSquare.column;
-            int toRow = toSquare.row;
-            int toColumn = toSquare.column;
-            int enPassantRow = currentTurn.IsWhite ? toSquare.row + 1 : toSquare.row - 1;
-            bool enPassantResult;
-            Piece? capturedPiece = null;
-            Spot? enPassantSpot = null;
-            Piece? enPassantPiece = enPassantSpot?.GetPiece();
 
-            Spot start = board.getSpot(fromRow, fromColumn);
-            Spot end = board.getSpot(toRow, toColumn);
-
-            if (enPassantRow > 0 && enPassantRow < 7 && board.getSpot(enPassantRow, toColumn).GetPiece() != null)
-            {
-                enPassantPiece = board.getSpot(enPassantRow, toColumn).GetPiece();
-            }
-
-            Piece movingPiece = start?.GetPiece();
+            Debug.WriteLine($"Current Turn {currentTurn}");
+            Spot start = board.GetSpot(fromSquare.row, fromSquare.column);
+            Spot end = board.GetSpot(toSquare.row, toSquare.column);
+            Piece? movingPiece = start?.Piece;
 
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
+                Debug.WriteLine("test 1");
                 return (false, false, false, false);
             }
 
             else if (!board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
+                Debug.WriteLine("Test 2");
                 return (false, false, false, false);
             }
 
+
+            bool moveSuccessful = false;
+            bool enPassantCaptureOccurred = false;
+            bool castledKingSide = false;
+            bool castledQueenSide = false;
+
             if (movingPiece.legalMove(board, start, end))
             {
-#pragma warning disable CS8604 // Possible null reference argument.
-                (Piece enPassantCapturedPiece, enPassantResult) = enPassantCapture(movingPiece, toSquare, board);
-#pragma warning restore CS8604 // Possible null reference argument.
+                Piece? capturedPiece = end.Piece;
 
-                if (enPassantResult)
+                if (movingPiece is Piece.Pawn && enPassantCapture(movingPiece, toSquare, board, out Piece? enPassantCapturedPiece))
                 {
                     capturedPiece = enPassantCapturedPiece;
-                }
-
-                if (end.GetPiece() != null)
-                {
-                    capturedPiece = end.GetPiece();
+                    enPassantCaptureOccurred = true;
                 }
 
                 if (capturedPiece != null && capturedPiece.isWhite() != movingPiece.isWhite())
                 {
-                    capturedPiece.setTaken(true);
-
-                    if (currentTurn == game.whitePlayer)
-                    {
-                        game.blackPlayer.removePiece(capturedPiece);
-                    }
-                    else
-                    {
-                        game.whitePlayer.removePiece(capturedPiece);
-                    }
+                    CapturePiece(capturedPiece);
                 }
 
-                end.SetPiece(movingPiece);
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                start.SetPiece(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-
+                end.Piece = movingPiece;
+                start.Piece = null;
                 movingPiece.setCurrentPosition(end);
 
-                swapTurn();
-
-                return (true, enPassantResult, false, false);
+                moveSuccessful = true;
             }
-
-            else if (start.GetPiece() != null && start.GetPiece() is Piece.King && end.GetPiece() != null && end.GetPiece() is Piece.Rook)
+            else if (movingPiece is Piece.King king && end.Piece is Piece.Rook)
             {
-                if (toSquare.column == 7)
+                if (toSquare.column == 7 && PerformCastling(king, toSquare, true, board))
                 {
-                    if (CastleKingSide(movingPiece, toSquare, fromSquare, board))
-                    {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        start.SetPiece(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        end.SetPiece(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-                        swapTurn();
-                        return (false, false, true, false);
-                    }
+                    moveSuccessful = true;
+                    castledKingSide = true;
                 }
-                else if (toSquare.column == 0)
+                else if (toSquare.column == 0 && PerformCastling(king, toSquare, false, board))
                 {
-                    if (CastleQueenSide(movingPiece, toSquare, fromSquare, board))
-                    {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-                        start.SetPiece(null);
-                        end.SetPiece(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
-                        swapTurn();
-                        return (false, false, false, true);
-                    }
+                    moveSuccessful = true;
+                    castledQueenSide = true;
                 }
             }
 
+            Debug.WriteLine($"Move Successful: {moveSuccessful}");
+            if (moveSuccessful)
+            {
+                swapTurn(); 
+            }
 
-            return (false, false, false, false);
+            return (moveSuccessful, enPassantCaptureOccurred, castledKingSide, castledQueenSide);
         }
 
-        private (Piece, bool) enPassantCapture(Piece movingPiece, ChessBoardSquare toSquare, Board board)
+
+        private bool enPassantCapture(Piece movingPiece, ChessBoardSquare toSquare, Board board, out Piece enPassantCapturedPiece)
         {
-            if(movingPiece is Piece.Pawn pawn)
+            enPassantCapturedPiece = null;
+
+            if (movingPiece is Piece.Pawn pawn)
             {
-                Debug.WriteLine(pawn.isEnPassant);
-                int direction = movingPiece.isWhite() ? -1 : 1;
-                Spot enPassantSpot = board.getSpot(toSquare.row + direction, toSquare.column);
-                Piece enPassantPiece = enPassantSpot?.GetPiece();
-                if(enPassantPiece is Piece.Pawn enPassantPawn)
+                int direction = movingPiece.isWhite() ? 1 : -1;
+                Spot enPassantSpot = board.GetSpot(toSquare.row + direction, toSquare.column);
+                Piece? enPassantPiece = enPassantSpot?.Piece;
+
+                if (enPassantPiece is Piece.Pawn enPassantPawn && enPassantPawn.isEnPassant && enPassantPawn.isWhite() != pawn.isWhite())
                 {
-                    if(enPassantPawn.isEnPassant && enPassantPawn.isWhite() != movingPiece.isWhite())
-                    {
-                        return (enPassantPiece, true);
-                    }
+                    enPassantCapturedPiece = enPassantPiece;
+                    return true;
                 }
-            }
-
-            return (null, false);
-        }
-
-        private bool CastleKingSide(Piece movingPiece, ChessBoardSquare toSquare, ChessBoardSquare fromSquare, Board board)
-        {
-
-            if (movingPiece is Piece.King king && king.canCastleKingside(king.isWhite(), board))
-            {
-                Piece kingSpot = board.getSpot(fromSquare.row, fromSquare.column).GetPiece();
-                Spot targetSpot = board.getSpot(toSquare.row, 6);
-                targetSpot.SetPiece(kingSpot);
-
-                Piece rookSpot = board.getSpot(fromSquare.row, 7).GetPiece();
-
-                if (rookSpot is Piece.Rook rook)
-                {
-                    rook.hasMoved = true;
-                }
-
-                Spot rookTargetSpot = board.getSpot(toSquare.row, 5);
-                rookTargetSpot.SetPiece(rookSpot);
-
-                king.hasMoved = true;
-                return true;
             }
 
             return false;
         }
 
-        private bool CastleQueenSide(Piece movingPiece, ChessBoardSquare toSquare, ChessBoardSquare fromSquare, Board board)
+        private bool PerformCastling(Piece.King king, ChessBoardSquare fromSquare, bool isKingside, Board board)
         {
-            if (movingPiece is Piece.King king && king.canCastleQueenside(king.isWhite(), board))
+            // Verify if castling conditions are satisfied
+            if ((isKingside && king.canCastleKingside(king.isWhite(), board)) ||
+                (!isKingside && king.canCastleQueenside(king.isWhite(), board)))
             {
-                Piece kingSpot = board.getSpot(fromSquare.row, fromSquare.column).GetPiece();
-                Spot targetSpot = board.getSpot(toSquare.row, 2);
-                targetSpot.SetPiece(kingSpot);
+                // Define columns for the rook and king's movements
+                int rookColumn = isKingside ? 7 : 0; // Rook's starting column
+                int kingTargetColumn = isKingside ? 6 : 2; // King's target column after castling
+                int rookTargetColumn = isKingside ? 5 : 3; // Rook's target column after castling
 
-                Piece rookSpot = board.getSpot(fromSquare.row, 0).GetPiece();
+                // Get spots for king, rook, and their target positions
+                Spot kingOriginalSpot = board.GetSpot(fromSquare.row, fromSquare.column);
+                Spot rookSpot = board.GetSpot(fromSquare.row, rookColumn);
+                Spot kingTarGetSpot = board.GetSpot(fromSquare.row, kingTargetColumn);
+                Spot rookTarGetSpot = board.GetSpot(fromSquare.row, rookTargetColumn);
 
-                if (rookSpot is Piece.Rook rook)
+                Debug.WriteLine($"king Target Spot {kingTarGetSpot} Rook Target Spot {rookTarGetSpot}");
+                // Move the king to its target position
+                kingTarGetSpot.Piece = king;
+                kingOriginalSpot.Piece = null; // Clear king's original spot
+
+                // Move the rook to its target position
+                if (rookSpot.Piece is Piece.Rook castlingRook)
                 {
-                    rook.hasMoved = true;
+                    Debug.WriteLine("Piece is Rook");
+                    rookTarGetSpot.Piece = castlingRook; // Assign rook to target spot
+                    rookSpot.Piece = null;              // Clear rook's original spot
+                    castlingRook.hasMoved = true;       // Mark rook as having moved
                 }
 
-                Spot rookTargetSpot = board.getSpot(toSquare.row, 3);
-                rookTargetSpot.SetPiece(rookSpot);
-
+                // Mark the king as having moved
                 king.hasMoved = true;
-                return true;
+
+                return true; // Castling successful
             }
 
-            return false;
+            return false; // Castling conditions not met
         }
+
 
         private void swapTurn()
         {
-            game.board.updateThreatMap(game.currentTurn.getPieces());
+            // Update the threat map for the current turn
+            game.board.UpdateThreatMap(GetActivePieces(game.currentTurn.IsWhite));
 
-            if (game.board.isKingInCheck(game.currentTurn.IsWhite))
+            // Check if the king is in check
+            if (game.board.IsKingInCheck(game.currentTurn.IsWhite))
             {
-                (bool canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, game.currentTurn.getPieces());
+                (bool canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, game.currentTurn.GetPieces());
             }
 
-            Player oppositePlayer = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
-            List<Piece> playerPieces = oppositePlayer.getPieces();
-            foreach (Piece piece in playerPieces)
-            {
-                if(piece is Piece.Pawn pawn)
-                {
-                    pawn.isEnPassant = false;
-                }
-            }
+            // Swap the current turn to the opposite player
+            Player currentTurn = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
 
-            game.SetCurrentTurn(oppositePlayer);
+            // Reset the en passant flag for all pawns belonging to the opposite player
+            currentTurn.ProcessPawns(pawn => pawn.isEnPassant = false);
+
+            // Set the new current turn
+            Debug.WriteLine($"Swapping turn. Current turn before swap: {(game.currentTurn.IsWhite ? "White" : "Black")}");
+            game.SetCurrentTurn(currentTurn);
+            Debug.WriteLine(currentTurn);
         }
 
+        public void RemoveActivePiece(Piece piece)
+        {
+            activePieces.Remove(piece);
+        }
+
+        public void AddActivePiece(Piece piece)
+        {
+            activePieces.Add(piece);
+        }
+
+        public IEnumerable<Piece> GetActivePieces(bool isWhite)
+        {
+            return activePieces?.Where(piece => piece.isWhite() == isWhite) ?? [];
+        }
+
+
+        public void CapturePiece(Piece piece)
+        {
+            RemoveActivePiece(piece);
+        }
+
+        public bool DrawKingVKing()
+        {
+            IEnumerable<Piece> pieces = GetActivePieces(game.currentTurn.IsWhite);
+            IEnumerable<Piece> opponentPieces = GetActivePieces(!game.currentTurn.IsWhite);
+
+                if(pieces.Count() == 1 && pieces.First().type is Piece.PieceType.King && 
+                opponentPieces.Count() == 1 && opponentPieces.First().type == Piece.PieceType.King)
+                {
+                    return true;
+                }
+
+            return false;
+        }
+
+        public bool DrawKingBishopVKing()
+        {
+            return activePieces.Count == 3 && activePieces.Any(p => p.type == Piece.PieceType.Bishop);
+        }
+
+        public bool DrawKingBishopVKingBishop()
+        {
+            return activePieces.Count == 4 && activePieces.Count(p => p.type == Piece.PieceType.Bishop) == 2;
+        }
+
+        public bool DrawKingKnightVKing()
+        {
+            return activePieces.Count == 3 && activePieces.Any(p => p.type == Piece.PieceType.Knight);
+        }
     }
 }

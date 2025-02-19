@@ -12,8 +12,9 @@ namespace ChessGame
         private Spot[][] boxes = new Spot[8][];
         private Player whitePlayer;
         private Player blackPlayer;
+        private GameRules gameRules;
 
-        public Board(Player whitePlayer, Player blackPlayer)
+        public Board(Player whitePlayer, Player blackPlayer, GameRules gameRules)
         {
             this.whitePlayer = whitePlayer;
             this.blackPlayer = blackPlayer;
@@ -23,48 +24,66 @@ namespace ChessGame
                 boxes[i] = new Spot[8];
                 for (int j = 0; j < 8; j++)
                 {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     boxes[i][j] = new Spot(i, j, null); // Initialize all spots as null
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
 
             threatMap = new bool[8, 8];
             // Initializes the new board
-            resetBoard();
+            ResetBoard();
+            this.gameRules = gameRules;
         }
 
         public bool willMovePutKingInCheck(Spot start, Spot end, bool isWhite)
         {
             //saves the original pieces to move them back after the simulation 
-            Piece originalStartPiece = start.GetPiece();
-            Piece originalEndPiece = end.GetPiece();
+            Piece originalStartPiece = start.Piece;
+            Piece originalEndPiece = end.Piece;
 
             //moves the pieces to simulate the movement and check if the king is in check 
-            end.SetPiece(originalStartPiece);
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            start.SetPiece(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
+            end.Piece = originalStartPiece;
+            start.Piece = null;
 
             //check if the move puts the king in check
-            bool kingInCheck = isKingInCheck(isWhite);
+            bool kingInCheck = IsKingInCheck(isWhite);
+            Debug.WriteLine($"Result: {(kingInCheck ? "King is in check" : "King is safe")}");
+
 
             //reverts the pieces back to their original position
-            start.SetPiece(originalStartPiece);
-            end.SetPiece(originalEndPiece);
+            start.Piece = originalStartPiece;
+            end.Piece = originalEndPiece;
 
             return !kingInCheck;
         }
 
-        public void updateThreatMap(List<Piece> opponentPieces)
+        public void UpdateThreatMap(IEnumerable<Piece> opponentPieces)
         {
             ClearThreatMap();
+
+            // Output the current opponent pieces for debugging
+            Debug.WriteLine("Active Opponent Pieces:");
+            foreach (var piece in opponentPieces)
+            {
+                Debug.WriteLine(piece.ToString());  // Adjust to output the piece information (ensure Piece class overrides ToString())
+            }
 
             foreach (Piece piece in opponentPieces)
             {
                 MarkThreats(piece);
             }
+
+            Console.WriteLine("Threat Map After Move:");
+            for (int row = 0; row < 8; row++)
+            {
+                for (int col = 0; col < 8; col++)
+                {
+                    Console.Write(threatMap[row, col] ? "X " : ". ");
+                }
+                Console.WriteLine();
+            }
+
         }
+
 
         private void ClearThreatMap()
         {
@@ -94,7 +113,7 @@ namespace ChessGame
                     {
                         if (boxes[i][j] != null)
                         {
-                            Piece p = boxes[i][j].GetPiece();
+                            Piece p = boxes[i][j].Piece;
                             if (p == piece)
                             {
                                 position = boxes[i][j];
@@ -111,8 +130,8 @@ namespace ChessGame
                 }
 
 
-                int row = position.GetRow(); 
-                int col = position.GetColumn(); 
+                int row = position.Row; 
+                int col = position.Column; 
 
                 switch (piece.type)
                 {
@@ -129,7 +148,7 @@ namespace ChessGame
                         markQueenThreats(piece, row, col);
                         break;
                     case Piece.PieceType.Knight:
-                        MarkKnightThreats(piece, row, col);
+                        MarkKnightThreats(row, col);
                         break;
                     case Piece.PieceType.King:
                         MarkKingThreats(piece, row, col);
@@ -205,7 +224,7 @@ namespace ChessGame
             }
         }
 
-        private void MarkKnightThreats(Piece Knight, int row, int col)
+        private void MarkKnightThreats(int row, int col)
         {
             int[] rows = { 2, 2, 1, -1, -2, -2, 1, -1 };
             int[] columns = { -1, 1, -2, -2, -1, 1, 2, 2 };
@@ -217,10 +236,10 @@ namespace ChessGame
 
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
-                    Spot spot = getSpot(newRow, newColumn);
-                    if (spot.GetPiece() != null)
+                    Spot spot = GetSpot(newRow, newColumn);
+                    if (spot.Piece != null)
                     {
-                        if (spot.GetPiece().type == Piece.PieceType.King)
+                        if (spot.Piece.type == Piece.PieceType.King)
                         {
                             threatMap[newRow, newColumn] = true;
                         }
@@ -258,9 +277,13 @@ namespace ChessGame
             while (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
             {
                 threatMap[newRow, newColumn] = true;
-                Spot spot = getSpot(newRow, newColumn);
-                if (spot?.GetPiece() != null)
+                Spot spot = GetSpot(newRow, newColumn);
+                if (spot?.Piece != null)
                 {
+                    if(spot.Piece.type == Piece.PieceType.King)
+                    {
+                        threatMap[newRow, newColumn] = true;
+                    }
                     break;
                 }
 
@@ -300,8 +323,8 @@ namespace ChessGame
             {
                 // Set the spot on the threat map to true 
                 threatMap[newRow, newColumn] = true;
-                Spot spot = getSpot(newRow, newColumn);
-                if (spot?.GetPiece() != null)
+                Spot spot = GetSpot(newRow, newColumn);
+                if (spot?.Piece != null)
                 {
                     break;
                 }
@@ -311,32 +334,31 @@ namespace ChessGame
             }
         }
 
-        public bool isKingInCheck(bool isWhite)
+        public bool IsKingInCheck(bool isWhite)
         {
-            Spot kingSpot = findKing(isWhite);
+            Spot kingSpot = FindKing(isWhite);
 
-            List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
-            updateThreatMap(opponentPieces);
+            UpdateThreatMap(gameRules.GetActivePieces(!isWhite));
 
-            return threatMap[kingSpot.GetRow(), kingSpot.GetColumn()];
+            return threatMap[kingSpot.Row, kingSpot.Column];
         }
 
-        public bool isSquareUnderThreat(bool isWhite, int row, int col)
+        public bool IsSquareUnderThreat(bool isWhite, int row, int col)
         {
-            List<Piece> opponentPieces = isWhite ? blackPlayer.getPieces() : whitePlayer.getPieces();
-            updateThreatMap(opponentPieces);
+            UpdateThreatMap(gameRules.GetActivePieces(isWhite));
 
             return threatMap[row, col];
         }
 
-        public Spot findKing(bool isWhite)
+        public Spot FindKing(bool isWhite)
         {
-            List<Piece> pieces = isWhite ? whitePlayer.getPieces() : blackPlayer.getPieces();
+            IEnumerable<Piece> pieces = gameRules.GetActivePieces(isWhite);
 
             foreach(Piece piece in pieces)
             {
                 if(piece is Piece.King)
                 {
+                    Debug.WriteLine("Piece is king");
                     return piece.getCurrentPosition();
                 }
             }
@@ -344,7 +366,7 @@ namespace ChessGame
             throw new InvalidOperationException("King not found on the board");
         }
 
-        public Spot getSpot(int row, int col)
+        public Spot GetSpot(int row, int col)
         {
             if (row < 0 || row > 7 || col < 0 || col > 7)
             {
@@ -353,44 +375,44 @@ namespace ChessGame
             return boxes[row][col];
         }
 
-        public void resetBoard()
+        public void ResetBoard()
         {
             // Initialize the white king on the board 
-            createPieces(new Piece.King(true), 7, 4, whitePlayer);
+            CreatePieces(new Piece.King(true), 7, 4, whitePlayer);
             // Initialize the white queen on the board 
-            createPieces(new Piece.Queen(true), 7, 3, whitePlayer);
+            CreatePieces(new Piece.Queen(true), 7, 3, whitePlayer);
             // Initialize the white rooks on the board 
-            createPieces(new Piece.Rook(true), 7, 0, whitePlayer);
-            createPieces(new Piece.Rook(true), 7, 7, whitePlayer);
+            CreatePieces(new Piece.Rook(true), 7, 0, whitePlayer);
+            CreatePieces(new Piece.Rook(true), 7, 7, whitePlayer);
             // Initialize the white knights on the board 
-            createPieces(new Piece.Knight(true), 7, 1, whitePlayer);
-            createPieces(new Piece.Knight(true), 7, 6, whitePlayer);
+            CreatePieces(new Piece.Knight(true), 7, 1, whitePlayer);
+            CreatePieces(new Piece.Knight(true), 7, 6, whitePlayer);
             // Initialize the white bishops on the board 
-            createPieces(new Piece.Bishop(true), 7, 2, whitePlayer);
-            createPieces(new Piece.Bishop(true), 7, 5, whitePlayer);
+            CreatePieces(new Piece.Bishop(true), 7, 2, whitePlayer);
+            CreatePieces(new Piece.Bishop(true), 7, 5, whitePlayer);
             // Initialize all the white pawns 
             for (int i = 0; i < 8; i++)
             {
-                createPieces(new Piece.Pawn(true), 6, i, whitePlayer);
+                CreatePieces(new Piece.Pawn(true), 6, i, whitePlayer);
             }
 
             // Initialize the black king on the board
-            createPieces(new Piece.King(false), 0, 4, blackPlayer);
+            CreatePieces(new Piece.King(false), 0, 4, blackPlayer);
             // Initialize the black queen on the board 
-            createPieces(new Piece.Queen(false), 0, 3, blackPlayer);
+            CreatePieces(new Piece.Queen(false), 0, 3, blackPlayer);
             // Initialize the black rook on the board 
-            createPieces(new Piece.Rook(false), 0, 0, blackPlayer);
-            createPieces(new Piece.Rook(false), 0, 7, blackPlayer);
+            CreatePieces(new Piece.Rook(false), 0, 0, blackPlayer);
+            CreatePieces(new Piece.Rook(false), 0, 7, blackPlayer);
             // Initialize the black Knight on the board
-            createPieces(new Piece.Knight(false), 0, 1, blackPlayer);
-            createPieces(new Piece.Knight(false), 0, 6, blackPlayer);
+            CreatePieces(new Piece.Knight(false), 0, 1, blackPlayer);
+            CreatePieces(new Piece.Knight(false), 0, 6, blackPlayer);
             // Initialize the black bishop on the board
-            createPieces(new Piece.Bishop(false), 0, 2, blackPlayer);
-            createPieces(new Piece.Bishop(false), 0, 5, blackPlayer);
+            CreatePieces(new Piece.Bishop(false), 0, 2, blackPlayer);
+            CreatePieces(new Piece.Bishop(false), 0, 5, blackPlayer);
             // Initialize the black pawns on the board 
             for (int i = 0; i < 8; i++)
             {
-                createPieces(new Piece.Pawn(false), 1, i, blackPlayer);
+                CreatePieces(new Piece.Pawn(false), 1, i, blackPlayer);
             }
 
             for (int i = 2; i < 6; i++)
@@ -404,7 +426,7 @@ namespace ChessGame
             }
         }
 
-        public void createPieces(Piece piece, int row, int col, Player player)
+        public void CreatePieces(Piece piece, int row, int col, Player player)
         {
             boxes[row][col] = new Spot(row, col, piece);
             player.addPiece(piece);
@@ -425,9 +447,8 @@ namespace ChessGame
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                 }
             }
+            
 
-            emptyPieces(whitePlayer.getPieces());
-            emptyPieces(blackPlayer.getPieces());
         }
 
         public void emptyPieces(List<Piece> pieces)

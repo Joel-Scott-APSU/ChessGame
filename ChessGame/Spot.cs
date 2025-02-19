@@ -4,25 +4,30 @@ namespace ChessGame
 {
     public class Spot
     {
-        private int column; // Rename 'x' to 'column' to represent the column index
-        private int row;    // Rename 'y' to 'row' to represent the row index
+        private int row;
+        private int column;
         private Piece piece;
 
         public Spot(int row, int column, Piece piece)
         {
-            this.column = column;
             this.row = row;
+            this.column = column;
             this.piece = piece;
         }
 
-        public int GetColumn() { return column; }
-        public void SetColumn(int column) { this.column = column; }
+        public int Row { get { return row; } }
+        public int Column { get { return column; } }
 
-        public int GetRow() { return row; }
-        public void SetRow(int row) { this.row = row; }
-
-        public Piece GetPiece() { return piece; }
-        public void SetPiece(Piece piece) { this.piece = piece; }
+        // Property to get and set the piece
+        public Piece Piece
+        {
+            get { return piece; }
+            set
+            {
+                // Add any logic or validation here if needed
+                piece = value;
+            }
+        }
 
         public override string ToString()
         {
