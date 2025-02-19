@@ -73,8 +73,8 @@ namespace ChessGame
             }
         }
 
-        Public bool? GetSquareColor(int row, int col) {
-           var square = ChessBoardSquares.FirstOrDefault(s => s.Row == row && s.Column == col);
+        public bool? GetSquareColor(int row, int col) {
+           var square = ChessBoardSquares.FirstOrDefault(s => s.row == row && s.column == col);
            return square?.isWhiteSquare;
         }
 
