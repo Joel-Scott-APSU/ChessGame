@@ -114,6 +114,7 @@ namespace ChessGame
                 {
                     if(board.willMovePutKingInCheck(start, end, isWhite()))
                     {
+                        Debug.WriteLine("Move will put king in check");
                         return false;
                     }
                 }
@@ -213,7 +214,7 @@ namespace ChessGame
 
                 if (board.IsKingInCheck(isWhite()))
                 {
-                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -361,7 +362,7 @@ namespace ChessGame
 
                 if (board.IsKingInCheck(isWhite()))
                 {
-                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -434,7 +435,7 @@ namespace ChessGame
 
                 if (board.IsKingInCheck(isWhite()))
                 {
-                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -482,7 +483,7 @@ namespace ChessGame
 
                 if (board.IsKingInCheck(isWhite()))
                 {
-                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -555,7 +556,7 @@ namespace ChessGame
 
                 if (board.IsKingInCheck(isWhite()))
                 {
-                    if (!board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }

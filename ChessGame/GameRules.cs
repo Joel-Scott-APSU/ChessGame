@@ -14,14 +14,20 @@ namespace ChessGame
     public class GameRules
     {
         private Game game;
-
         private HashSet<Piece> activePieces;
-        public GameRules(Game game)
+        MainWindowViewModel viewModel;
+
+        public GameRules(Game game, MainWindowViewModel viewModel)
         {
             this.game = game;
             this.activePieces = new HashSet<Piece>();
+            this.viewModel = viewModel;
         }
 
+        public bool? GetSquareColor(int row, int col)
+        {
+            return viewModel?.GetSquareColor(row, col);
+        }
         public void InitializeActivePieces()
         {
             activePieces = new HashSet<Piece>(game.whitePlayer.GetPieces().Concat(game.blackPlayer.GetPieces()));
@@ -38,13 +44,11 @@ namespace ChessGame
 
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
-                Debug.WriteLine("test 1");
                 return (false, false, false, false);
             }
 
             else if (!board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
-                Debug.WriteLine("Test 2");
                 return (false, false, false, false);
             }
 
@@ -92,6 +96,7 @@ namespace ChessGame
             Debug.WriteLine($"Move Successful: {moveSuccessful}");
             if (moveSuccessful)
             {
+                PiecePositions(GetActivePieces(currentTurn.IsWhite));
                 swapTurn(); 
             }
 
@@ -162,13 +167,24 @@ namespace ChessGame
 
         private void swapTurn()
         {
+            bool canMove = true;
             // Update the threat map for the current turn
             game.board.UpdateThreatMap(GetActivePieces(game.currentTurn.IsWhite));
+            Debug.WriteLine($"is white player: {game.currentTurn.IsWhite}");
+
+            Player oppositeTurn = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
 
             // Check if the king is in check
-            if (game.board.IsKingInCheck(game.currentTurn.IsWhite))
+            if (game.board.IsKingInCheck(oppositeTurn.IsWhite))
             {
-                (bool canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, game.currentTurn.GetPieces());
+                Debug.WriteLine("Checking if the king is in checkmate");
+                (canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(!game.currentTurn.IsWhite));
+            }
+
+            Debug.WriteLine($"Can Move: {canMove}");
+            if(!canMove)
+            {
+                Debug.WriteLine("CHECKMATE");
             }
 
             // Swap the current turn to the opposite player
@@ -183,6 +199,7 @@ namespace ChessGame
             Debug.WriteLine(currentTurn);
         }
 
+        
         public void RemoveActivePiece(Piece piece)
         {
             activePieces.Remove(piece);
@@ -204,33 +221,70 @@ namespace ChessGame
             RemoveActivePiece(piece);
         }
 
-        public bool DrawKingVKing()
-        {
-            IEnumerable<Piece> pieces = GetActivePieces(game.currentTurn.IsWhite);
-            IEnumerable<Piece> opponentPieces = GetActivePieces(!game.currentTurn.IsWhite);
-
-                if(pieces.Count() == 1 && pieces.First().type is Piece.PieceType.King && 
-                opponentPieces.Count() == 1 && opponentPieces.First().type == Piece.PieceType.King)
-                {
-                    return true;
-                }
-
-            return false;
-        }
-
-        public bool DrawKingBishopVKing()
+        private bool DrawKingBishopVKing()
         {
             return activePieces.Count == 3 && activePieces.Any(p => p.type == Piece.PieceType.Bishop);
         }
 
-        public bool DrawKingBishopVKingBishop()
+        private bool DrawKingBishopVKingBishop()
         {
-            return activePieces.Count == 4 && activePieces.Count(p => p.type == Piece.PieceType.Bishop) == 2;
+            if(activePieces.Count == 4 || activePieces.Count(p => p.type == Piece.PieceType.Bishop) != 2)
+            {
+                return false;
+            }
+
+            var bishops = activePieces.Where(p => p.type == Piece.PieceType.Bishop).ToList();
+
+            Spot position1 = bishops[0].getCurrentPosition();
+            Spot position2 = bishops[1].getCurrentPosition();
+
+            int row1 = position1.Row;
+            int col1 = position1.Column;
+            int row2 = position2.Row;
+            int col2 = position2.Column;
+
+            bool? color1 = GetSquareColor(row1, col1);
+            bool? color2 = GetSquareColor(row2, col2);
+
+            return color1.HasValue && color2.HasValue && color1.Value == color2.Value;
         }
 
-        public bool DrawKingKnightVKing()
+        private bool DrawKingKnightVKing()
         {
             return activePieces.Count == 3 && activePieces.Any(p => p.type == Piece.PieceType.Knight);
+        }
+
+        public bool Draw()
+        {
+            if(activePieces.Count == 4)
+            {
+                return DrawKingBishopVKingBishop();
+            }
+
+            else if(activePieces.Count == 3)
+            {
+                if(DrawKingBishopVKing() || DrawKingKnightVKing())
+                {
+                    return true;
+                }
+            }
+
+            else if (activePieces.Count == 2)
+            {
+                return true;
+            }
+
+
+            return false;
+        }
+
+        private void PiecePositions(IEnumerable<Piece> activePieces)
+        {
+            foreach(Piece piece in activePieces)
+            {
+                Debug.WriteLine($"Piece: {piece} Piece Position: {piece.getCurrentPosition()}");
+            }
+            Debug.WriteLine(activePieces.Count());
         }
     }
 }

@@ -17,13 +17,12 @@ namespace ChessGame
             this.gameRules = gameRules;
         }
 
-        public (bool, Spot) checkForLegalMoves(Player player, Board board, IReadOnlyList<Piece> pieces)
+        public (bool, Spot) checkForLegalMoves(Player player, Board board, IEnumerable<Piece> pieces)
         {
             try
             {
                 foreach (Piece piece in pieces)
                 {
-
                     Spot start = piece.getCurrentPosition();
 
                     switch (piece.type)
@@ -32,14 +31,17 @@ namespace ChessGame
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
                                 var (canMove, spot) = checkRookMoves(player, direction, board, start);
-
+                                Debug.WriteLine($"Can Rook move: {canMove}");
+                                if (canMove)
+                                {
                                     return (true, start);
-                                
+                                }
                             }
                             break;
 
                         case Piece.PieceType.Pawn:
                             var (pawnCanMove, pawnSpot) = checkPawnMoves(player, start, board, piece);
+                            Debug.WriteLine($"Can Pawn move: {pawnCanMove}");
                             if (pawnCanMove)
                             {
                                 return (true, pawnSpot);
@@ -48,6 +50,7 @@ namespace ChessGame
 
                         case Piece.PieceType.Knight:
                             var (knightCanMove, knightSpot) = checkKnightMoves(player, start, board);
+                            Debug.WriteLine($"Can Knight Move: {knightCanMove}");
                             if (knightCanMove)
                             {
                                 return (true, knightSpot);
@@ -58,6 +61,7 @@ namespace ChessGame
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
                                 var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
+                                Debug.WriteLine($"Can Bishop Move: {bishopCanMove}");
                                 if (bishopCanMove)
                                 {
                                     return (true, bishopSpot);
@@ -70,10 +74,12 @@ namespace ChessGame
                             {
                                 var (rookCanMove, rookSpot) = checkRookMoves(player, direction, board, start);
                                 var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
+                                Debug.WriteLine($"Can queen move Horizontally/Vertically: {rookCanMove}");
                                 if (rookCanMove)
                                 {
                                     return (true, rookSpot);
                                 }
+                                Debug.WriteLine($"Can queen move Diagonally: {bishopCanMove}");
                                 if (bishopCanMove)
                                 {
                                     return (true, bishopSpot);
@@ -85,6 +91,7 @@ namespace ChessGame
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
                                 var (kingCanMove, kingSpot) = checkKingMoves(player, start, board, direction);
+                                Debug.WriteLine($"Can King Move: \n{kingCanMove} Direction: {direction}");
                                 if (kingCanMove)
                                 {
                                     return (true, start);
@@ -104,6 +111,7 @@ namespace ChessGame
 
         private (bool, Spot) checkRookMoves(Player player, Piece.Direction direction, Board board, Spot start)
         {
+            Piece StartPiece = start.Piece;
             bool isWhite = player.IsWhite;
             int rowDelta = 0, colDelta = 0;
             switch (direction)
@@ -123,15 +131,13 @@ namespace ChessGame
                 Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
                 Piece currentPiece = currentSpot.Piece;
 
-                if (currentPiece != null)
+                if (currentPiece == null || StartPiece.isWhite() != currentPiece.isWhite())
                 {
-                    if (currentPiece.isWhite() != isWhite)
-                    {
                         if (TryMoveRook(start, currentSpot, board, player))
                         {
+                            Debug.WriteLine("Trying Rook move #1");
                             return (true, currentSpot);
                         }
-                    }
                     break;
                 }
                 else
@@ -391,6 +397,10 @@ namespace ChessGame
             int rowDelta = 0;
             int colDelta = 0;
             Piece currentPiece = start.Piece;
+            bool wasPieceCaptured = false;
+            bool isMoveSafe = false; // Declare it here so it's available at the return
+
+            Debug.WriteLine("Piece in check for legal moves: " + currentPiece);
             bool isWhite = player.IsWhite;
 
             switch (direction)
@@ -409,46 +419,46 @@ namespace ChessGame
             int newRow = start.Row + rowDelta;
             int newCol = start.Column + colDelta;
 
-            if (Math.Abs(newRow - start.Row) <= 1 && Math.Abs(newCol - start.Column) <= 1)
+            if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
             {
-                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
+                Spot moveSpot = board.GetSpot(newRow, newCol);
+                Spot originalSpot = start;
+                Piece originalTargetPiece = moveSpot.Piece;
+                // Only proceed if the target spot is not occupied by a friendly piece
+                if (originalTargetPiece == null || originalTargetPiece.isWhite() != currentPiece.isWhite())
+
                 {
-                    Spot moveSpot = board.GetSpot(newRow, newCol);
-
-                    // Store the original state
-                    Spot originalSpot = start;
-                    Piece originalTargetPiece = moveSpot.Piece;
-
-                    // Temporarily move the king
+                    // Simulate the move
                     moveSpot.Piece = currentPiece;
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                     originalSpot.Piece = null;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                     currentPiece.setCurrentPosition(moveSpot);
 
-                    // Temporarily set the captured piece's position to null if there is one
-                    if (originalTargetPiece != null)
+                    wasPieceCaptured = originalTargetPiece != null;
+                    if (wasPieceCaptured)
                     {
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                         originalTargetPiece.setCurrentPosition(null);
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
                         player.removePiece(originalTargetPiece);
                     }
 
-                    // Update the threat map and check if the king is in check
-                    board.UpdateThreatMap(gameRules.GetActivePieces(isWhite));
-                    bool isMoveSafe = !board.IsKingInCheck(isWhite);
+                    Debug.WriteLine($"Updating threat map in king moves #1 Direction {direction}");
+                    board.UpdateThreatMap(gameRules.GetActivePieces(!isWhite));
+
+                    isMoveSafe = board.IsKingInCheck(isWhite);
 
                     // Revert the move
-                    if (originalTargetPiece != null)
+                    originalSpot.Piece = currentPiece;
+                    currentPiece.setCurrentPosition(originalSpot);
+
+                    if (wasPieceCaptured)
                     {
-                        moveSpot.Piece = originalTargetPiece; // Restore the captured piece, if any
+                        moveSpot.Piece = originalTargetPiece;
                         originalTargetPiece.setCurrentPosition(moveSpot);
                         player.addPiece(originalTargetPiece);
                     }
-
-                    originalSpot.Piece = currentPiece;
-                    currentPiece.setCurrentPosition(originalSpot);
+                    else
+                    {
+                        moveSpot.Piece = null;
+                    }
 
                     if (isMoveSafe)
                     {
@@ -459,9 +469,5 @@ namespace ChessGame
 
             return (false, null);
         }
-
-
-
-
     }
 }

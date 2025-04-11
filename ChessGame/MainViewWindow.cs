@@ -24,7 +24,7 @@ namespace ChessGame
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
-            game = new Game();
+            game = new Game(this);
             InitializeChessBoardNumbers();
         }
 

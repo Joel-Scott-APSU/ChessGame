@@ -59,29 +59,10 @@ namespace ChessGame
         public void UpdateThreatMap(IEnumerable<Piece> opponentPieces)
         {
             ClearThreatMap();
-
-            // Output the current opponent pieces for debugging
-            Debug.WriteLine("Active Opponent Pieces:");
             foreach (var piece in opponentPieces)
-            {
-                Debug.WriteLine(piece.ToString());  // Adjust to output the piece information (ensure Piece class overrides ToString())
-            }
-
-            foreach (Piece piece in opponentPieces)
             {
                 MarkThreats(piece);
             }
-
-            Console.WriteLine("Threat Map After Move:");
-            for (int row = 0; row < 8; row++)
-            {
-                for (int col = 0; col < 8; col++)
-                {
-                    Console.Write(threatMap[row, col] ? "X " : ". ");
-                }
-                Console.WriteLine();
-            }
-
         }
 
 
@@ -126,7 +107,7 @@ namespace ChessGame
 
                 if (position == null)
                 {
-                    throw new InvalidOperationException($"Piece not found on the board: {piece} Location: {position}");
+                    throw new InvalidOperationException($"Piece not found on the board: {piece}");
                 }
 
 
@@ -358,7 +339,6 @@ namespace ChessGame
             {
                 if(piece is Piece.King)
                 {
-                    Debug.WriteLine("Piece is king");
                     return piece.getCurrentPosition();
                 }
             }

@@ -20,9 +20,9 @@ namespace ChessGame
 
         private GameRules gameRules;
 
-        public Game()
+        public Game(MainWindowViewModel viewModel)
         {
-            gameRules = new GameRules(this);
+            gameRules = new GameRules(this, viewModel);
             initializeGame();
             gameRules.InitializeActivePieces();
         }
@@ -48,6 +48,15 @@ namespace ChessGame
             currentTurn = newTurn;
         }
 
+        public void EndGame()
+        {
+            if (gameRules.Draw())
+            {
+
+            }
+
+            //if(moves.checkForLegalMoves())
+        }
     }
 }
 
