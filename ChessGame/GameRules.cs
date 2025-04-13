@@ -179,6 +179,10 @@ namespace ChessGame
             {
                 Debug.WriteLine("Checking if the king is in checkmate");
                 (canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(!game.currentTurn.IsWhite));
+                foreach (Piece piece in GetActivePieces(!game.currentTurn.IsWhite))
+                {
+                    Debug.WriteLine($"Pieces used in check for legal moves: {piece}");
+                }
             }
 
             Debug.WriteLine($"Can Move: {canMove}");

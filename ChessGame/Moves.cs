@@ -21,20 +21,36 @@ namespace ChessGame
         {
             try
             {
-                foreach (Piece piece in pieces)
+                var bishopDirections = new List<Piece.Direction>
+                {
+                    Piece.Direction.Northeast, 
+                    Piece.Direction.Southwest, 
+                    Piece.Direction.Southeast, 
+                    Piece.Direction.Northwest
+                };
+
+                var rookDirections = new List<Piece.Direction>
+                {
+                    Piece.Direction.North,
+                    Piece.Direction.South,
+                    Piece.Direction.East,
+                    Piece.Direction.West
+                };
+
+                foreach (Piece piece in pieces.ToList())
                 {
                     Spot start = piece.getCurrentPosition();
 
                     switch (piece.type)
                     {
                         case Piece.PieceType.Rook:
-                            foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
+                            foreach (Piece.Direction direction in rookDirections)
                             {
                                 var (canMove, spot) = checkRookMoves(player, direction, board, start);
-                                Debug.WriteLine($"Can Rook move: {canMove}");
+                                Debug.WriteLine($"Can Rook move: {canMove} Direction: {direction}");
                                 if (canMove)
                                 {
-                                    return (true, start);
+                                    return (true, spot);
                                 }
                             }
                             break;
@@ -58,7 +74,7 @@ namespace ChessGame
                             break;
 
                         case Piece.PieceType.Bishop:
-                            foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
+                            foreach (Piece.Direction direction in bishopDirections)
                             {
                                 var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
                                 Debug.WriteLine($"Can Bishop Move: {bishopCanMove}");
@@ -70,16 +86,21 @@ namespace ChessGame
                             break;
 
                         case Piece.PieceType.Queen:
-                            foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
+                            foreach (Piece.Direction direction in rookDirections)
                             {
                                 var (rookCanMove, rookSpot) = checkRookMoves(player, direction, board, start);
-                                var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
-                                Debug.WriteLine($"Can queen move Horizontally/Vertically: {rookCanMove}");
+                                Debug.WriteLine($"Can queen move Horizontally/Vertically: {rookCanMove} Direction: {direction}\n");
                                 if (rookCanMove)
                                 {
                                     return (true, rookSpot);
                                 }
-                                Debug.WriteLine($"Can queen move Diagonally: {bishopCanMove}");
+                            }
+
+                            foreach(Piece.Direction direction in bishopDirections) 
+                            { 
+                                var (bishopCanMove, bishopSpot) = checkBishopMoves(player, start, board, direction);
+
+                                Debug.WriteLine($"Can queen move Diagonally: {bishopCanMove} Direction: {direction}\n");
                                 if (bishopCanMove)
                                 {
                                     return (true, bishopSpot);
@@ -91,7 +112,7 @@ namespace ChessGame
                             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
                             {
                                 var (kingCanMove, kingSpot) = checkKingMoves(player, start, board, direction);
-                                Debug.WriteLine($"Can King Move: \n{kingCanMove} Direction: {direction}");
+                                Debug.WriteLine($"Can King Move: {kingCanMove} Direction: {direction}\n");
                                 if (kingCanMove)
                                 {
                                     return (true, start);
@@ -112,7 +133,6 @@ namespace ChessGame
         private (bool, Spot) checkRookMoves(Player player, Piece.Direction direction, Board board, Spot start)
         {
             Piece StartPiece = start.Piece;
-            bool isWhite = player.IsWhite;
             int rowDelta = 0, colDelta = 0;
             switch (direction)
             {
@@ -131,21 +151,30 @@ namespace ChessGame
                 Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
                 Piece currentPiece = currentSpot.Piece;
 
-                if (currentPiece == null || StartPiece.isWhite() != currentPiece.isWhite())
+                if (currentPiece != null && currentPiece.isWhite() != StartPiece.isWhite())
                 {
-                        if (TryMoveRook(start, currentSpot, board, player))
-                        {
-                            Debug.WriteLine("Trying Rook move #1");
-                            return (true, currentSpot);
-                        }
-                    break;
-                }
-                else
-                {
+                    Debug.WriteLine($"Current Piece at Square: {currentPiece} Start Piece at Square {StartPiece}");
                     if (TryMoveRook(start, currentSpot, board, player))
                     {
+                        Debug.WriteLine("Rook Can Move #1");
                         return (true, currentSpot);
                     }
+                    break;
+                    
+                }
+
+                else if (currentSpot == null)
+                {
+                    if(TryMoveRook(start, currentSpot, board, player))
+                    {
+                        Debug.WriteLine("Rook Can Move #2");
+                        return (true, currentSpot);
+                    }
+                }
+
+                else if(currentPiece != null && currentPiece.isWhite() == StartPiece.isWhite())
+                {
+
                 }
 
                 pieceRow += rowDelta;
@@ -342,27 +371,27 @@ namespace ChessGame
             int pieceRow = start.Row + rows;
             int pieceCol = start.Column + cols;
 
-            while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
+            while(pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
             {
+
                 Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
                 Piece pieceAtSpot = currentSpot.Piece;
 
-                if (pieceAtSpot != null)
-                {
-                    if (pieceAtSpot.isWhite() != isWhite)
-                    {
-                        if (TryMoveBishop(start, currentSpot, board, player))
-                        {
-                            return (true, currentSpot);
-                        }
-                    }
-                    break;
-                }
-                else
+                if (pieceAtSpot != null && pieceAtSpot.isWhite() != currentPiece.isWhite())
                 {
                     if (TryMoveBishop(start, currentSpot, board, player))
                     {
                         return (true, currentSpot);
+                        break;
+                    }
+                }
+
+                else if(currentSpot == null)
+                {
+                    if(TryMoveBishop(start, currentSpot, board, player))
+                    {
+                        return (true, currentSpot);
+                        break;
                     }
                 }
 
@@ -376,18 +405,24 @@ namespace ChessGame
         private bool TryMoveBishop(Spot start, Spot target, Board board, Player player)
         {
             bool isWhite = player.IsWhite;
+
             Piece movedPiece = start.Piece;
             Piece capturedPiece = target.Piece;
+
+            gameRules.RemoveActivePiece(capturedPiece);
 
             target.Piece = movedPiece;
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             start.Piece = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
+            board.UpdateThreatMap(gameRules.GetActivePieces(isWhite));
+
             bool kingSafe = !board.IsKingInCheck(isWhite);
 
             start.Piece = movedPiece;
             target.Piece = capturedPiece;
+            gameRules.AddActivePiece(capturedPiece);
 
             return kingSafe;
         }
@@ -400,7 +435,6 @@ namespace ChessGame
             bool wasPieceCaptured = false;
             bool isMoveSafe = false; // Declare it here so it's available at the return
 
-            Debug.WriteLine("Piece in check for legal moves: " + currentPiece);
             bool isWhite = player.IsWhite;
 
             switch (direction)
