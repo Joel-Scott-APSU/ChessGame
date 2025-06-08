@@ -1,9 +1,12 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using ChessGame.Core;
+using ChessGame.Models;
+using ChessGame.Views;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Diagnostics;
 using System.Windows.Documents;
-using static ChessGame.Piece;
+using static ChessGame.Models.Piece;
 
-namespace ChessGame.Tests
+namespace MovesTests
 {
     [TestClass]
     public class ChessGameTests
@@ -16,6 +19,7 @@ namespace ChessGame.Tests
         private MainWindowViewModel MainWindowViewModel;
         private GameRules gameRules;
         private HashSet<Piece> activePieces;
+        private ThreatMap threatMap;
         [TestInitialize]
         public void Setup()
         {
@@ -25,6 +29,7 @@ namespace ChessGame.Tests
             blackPlayer = new Player(false, gameRules);
             board = new Board(whitePlayer, blackPlayer, game);
             moves = new Moves(whitePlayer, blackPlayer, gameRules);
+            threatMap = new ThreatMap(whitePlayer, blackPlayer, game);
             activePieces = new HashSet<Piece>();
         }
         [TestMethod]
@@ -35,9 +40,9 @@ namespace ChessGame.Tests
          */
         public void TestCheckMateScenario1()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteQueen = new Piece.Queen(true);
-            Piece whiteBishop = new Piece.Bishop(true);
+            Piece blackKing = new King(false);
+            Piece whiteQueen = new Queen(true);
+            Piece whiteBishop = new Bishop(true);
 
             board.clearBoard();
             board.CreatePieces(whiteBishop, 5, 5, whitePlayer);
@@ -63,9 +68,9 @@ namespace ChessGame.Tests
             board.clearBoard(); // Clear the board first
 
             // Re-create and place the pieces after clearing the board
-            Piece whiteKing = new Piece.King(true);
-            Piece blackKing = new Piece.King(false);
-            Piece whiteQueen = new Piece.Queen(true);
+            Piece whiteKing = new King(true);
+            Piece blackKing = new King(false);
+            Piece whiteQueen = new Queen(true);
 
             board.CreatePieces(whiteKing, 0, 2, whitePlayer);
             board.CreatePieces(blackKing, 0, 0, blackPlayer);
@@ -88,10 +93,10 @@ namespace ChessGame.Tests
         //checkmate scenario 4 uses 2 queens and a king 
         public void TestCheckMateScenario4()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteQueen1 = new Piece.Queen(true);
-            Piece whiteQueen2 = new Piece.Queen(true);
-            Piece whiteKing = new Piece.King(true);
+            Piece blackKing = new King(false);
+            Piece whiteQueen1 = new Queen(true);
+            Piece whiteQueen2 = new Queen(true);
+            Piece whiteKing = new King(true);
 
             board.clearBoard();
             board.CreatePieces(whiteKing, 6, 6, whitePlayer);
@@ -116,10 +121,10 @@ namespace ChessGame.Tests
         //checkmate scenario 5 uses a queen, rook, and king 
         public void TestCheckMateScenario5()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteQueen = new Piece.Queen(true);
-            Piece whiteRook = new Piece.Rook(true);
-            Piece whiteKing = new Piece.King(true);
+            Piece blackKing = new King(false);
+            Piece whiteQueen = new Queen(true);
+            Piece whiteRook = new Rook(true);
+            Piece whiteKing = new King(true);
 
             board.clearBoard();
             board.CreatePieces(whiteKing, 5, 5, whitePlayer);
@@ -144,10 +149,10 @@ namespace ChessGame.Tests
         //checkmate scenario 6 uses a bishop, pawn, and a king 
         public void TestCheckMateScenario6()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteRook = new Piece.Rook(true);
-            Piece whiteQueen = new Piece.Queen(true);
-            Piece whiteKing = new Piece.King(true);
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece whiteQueen = new Queen(true);
+            Piece whiteKing = new King(true);
 
             board.clearBoard();
             board.CreatePieces(whiteKing, 5, 5, whitePlayer);
@@ -172,9 +177,9 @@ namespace ChessGame.Tests
         // Scenario where the black bishop captures the white rook to avoid checkmate
         public void TestBishopCapturesToEscapeCheckMate()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteRook = new Piece.Rook(true);
-            Piece blackBishop = new Piece.Bishop(false);
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece blackBishop = new Bishop(false);
 
             board.clearBoard();
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
@@ -199,9 +204,9 @@ namespace ChessGame.Tests
         // Scenario where the black king can capture the attacking piece and avoid checkmate
         public void TestCaptureToEscapeCheckMate()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteRook = new Piece.Rook(true);
-            Piece whiteKing = new Piece.King(true);
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece whiteKing = new King(true);
 
             board.clearBoard();
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
@@ -224,9 +229,9 @@ namespace ChessGame.Tests
         // Scenario where the black king can move out of checkmate
         public void TestMoveKingToEscapeCheckMate()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteQueen = new Piece.Queen(true);
-            Piece whiteRook = new Piece.Rook(true);
+            Piece blackKing = new King(false);
+            Piece whiteQueen = new Queen(true);
+            Piece whiteRook = new Rook(true);
 
             board.clearBoard();
 
@@ -249,9 +254,9 @@ namespace ChessGame.Tests
         [STAThread]
         public void TestPawnBlockCheckMate()
         {
-            Piece blackKing = new Piece.King(false);
-            Piece whiteRook = new Piece.Rook(true);
-            Piece blackRook = new Piece.Rook(false);
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece blackRook = new Rook(false);
 
             board.clearBoard();
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
@@ -292,7 +297,7 @@ namespace ChessGame.Tests
             // Move white pawn two squares forward (this should set it up for en passant)
             Spot startSpot = board.GetSpot(6, 4);
             Spot endSpot = board.GetSpot(4, 4); // Moving to row 4 from row 6
-            whitePawn.legalMove(board, startSpot, endSpot);
+            whitePawn.legalMove(threatMap, startSpot, endSpot);
 
             // Check that the white pawn is set for en passant
             Assert.IsTrue(whitePawn.isEnPassant, "White pawn should be marked for en passant after moving two squares forward.");
@@ -300,12 +305,12 @@ namespace ChessGame.Tests
             // Move black pawn next to white pawn
             Spot blackStartSpot = board.GetSpot(1, 5);
             Spot blackEndSpot = board.GetSpot(2, 5); // Moving to row 2 from row 1
-            blackPawn.legalMove(board, blackStartSpot, blackEndSpot);
+            blackPawn.legalMove(threatMap, blackStartSpot, blackEndSpot);
 
             // Now try en passant move
             Spot enPassantSpot = board.GetSpot(4, 5); // The spot where the white pawn will be captured en passant
             Spot captureSpot = board.GetSpot(5, 4); // The destination spot for the black pawn capturing en passant
-            bool moveResult = blackPawn.legalMove(board, blackEndSpot, captureSpot);
+            bool moveResult = blackPawn.legalMove(threatMap, blackEndSpot, captureSpot);
 
             // Check that the black pawn can capture the white pawn en passant
             Assert.IsTrue(moveResult, "Black pawn should be able to capture white pawn en passant.");
@@ -320,8 +325,8 @@ namespace ChessGame.Tests
             board.clearBoard();
 
             // Create the necessary pieces for kingside castling (White King and White Rook)
-            Piece whiteKing = new Piece.King(true);
-            Piece whiteRook = new Piece.Rook(true);
+            Piece whiteKing = new King(true);
+            Piece whiteRook = new Rook(true);
 
             // Place the King and Rook on their initial positions
             board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
@@ -352,8 +357,8 @@ namespace ChessGame.Tests
             board.clearBoard();
 
             // Create the necessary pieces for queenside castling (White King and White Rook)
-            Piece whiteKing = new Piece.King(true);
-            Piece whiteRook = new Piece.Rook(true);
+            Piece whiteKing = new King(true);
+            Piece whiteRook = new Rook(true);
 
             // Place the King and Rook on their initial positions
             board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
@@ -386,8 +391,8 @@ namespace ChessGame.Tests
             board.clearBoard();
 
             // Create white king on E1 (7,4)
-            Piece whiteKing = new Piece.King(true);
-            Piece blackRook = new Piece.Rook(false);
+            Piece whiteKing = new King(true);
+            Piece blackRook = new Rook(false);
 
             board.CreatePieces(whiteKing, 7, 4, whitePlayer);
             board.CreatePieces(blackRook, 6, 4, blackPlayer);
@@ -431,15 +436,15 @@ namespace ChessGame.Tests
             board.clearBoard();
 
             // Black King on H8 (0, 7)
-            Piece blackKing = new Piece.King(false);
+            Piece blackKing = new King(false);
             board.CreatePieces(blackKing, 0, 7, blackPlayer);
 
             // White Rook on H6 (2, 7) - covers h-file
-            Piece whiteQueen = new Piece.Queen(true);
+            Piece whiteQueen = new Queen(true);
             board.CreatePieces(whiteQueen, 2, 7, whitePlayer);
 
             // White Rook on G7 (1, 6) - covers 7th rank
-            Piece whiteRook1 = new Piece.Rook(true);
+            Piece whiteRook1 = new Rook(true);
             board.CreatePieces(whiteRook1, 1, 6, whitePlayer);
 
             gameRules.InitializeActivePiecesForTest();
@@ -462,17 +467,17 @@ namespace ChessGame.Tests
             gameRules.InitializeActivePiecesForTest();
 
             // Black King on H8 (0,7)
-            Piece blackKing = new Piece.King(false);
+            Piece blackKing = new King(false);
             board.CreatePieces(blackKing, 0, 7, blackPlayer);
             gameRules.AddActivePiece(blackKing);
 
             // White King somewhere far to ensure the game is valid (e.g., A1 at 7,0)
-            Piece whiteKing = new Piece.King(true);
+            Piece whiteKing = new King(true);
             board.CreatePieces(whiteKing, 7, 0, whitePlayer);
             gameRules.AddActivePiece(whiteKing);
 
             // White Queen on G6 (2,6), controlling squares around black king
-            Piece whiteQueen = new Piece.Queen(true);
+            Piece whiteQueen = new Queen(true);
             board.CreatePieces(whiteQueen, 2, 6, whitePlayer);
             gameRules.AddActivePiece(whiteQueen);
 
@@ -489,9 +494,9 @@ namespace ChessGame.Tests
             board.clearBoard();
 
             // Create pieces
-            var whiteKing = new Piece.King(true);
-            var blackKing = new Piece.King(false);
-            var whiteBishop = new Piece.Bishop(true);
+            var whiteKing = new King(true);
+            var blackKing = new King(false);
+            var whiteBishop = new Bishop(true);
 
             // Place pieces on board
             board.CreatePieces(whiteKing, 0, 0, whitePlayer);
@@ -515,10 +520,10 @@ namespace ChessGame.Tests
         {
             board.clearBoard();
 
-            var whiteKing = new Piece.King(true);
-            var blackKing = new Piece.King(false);
-            var whiteBishop = new Piece.Bishop(true);
-            var blackBishop = new Piece.Bishop(false);
+            var whiteKing = new King(true);
+            var blackKing = new King(false);
+            var whiteBishop = new Bishop(true);
+            var blackBishop = new Bishop(false);
 
             // Place bishops on different color squares
             board.CreatePieces(whiteKing, 0, 0, whitePlayer);
@@ -543,9 +548,9 @@ namespace ChessGame.Tests
         {
             board.clearBoard();
 
-            var whiteKing = new Piece.King(true);
-            var blackKing = new Piece.King(false);
-            var whiteKnight = new Piece.Knight(true);
+            var whiteKing = new King(true);
+            var blackKing = new King(false);
+            var whiteKnight = new Knight(true);
 
             board.CreatePieces(whiteKing, 0, 0, whitePlayer);
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
@@ -567,8 +572,8 @@ namespace ChessGame.Tests
         {
             board.clearBoard();
 
-            var whiteKing = new Piece.King(true);
-            var blackKing = new Piece.King(false);
+            var whiteKing = new King(true);
+            var blackKing = new King(false);
 
             board.CreatePieces(whiteKing, 0, 0, whitePlayer);
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
@@ -588,9 +593,9 @@ namespace ChessGame.Tests
         {
             board.clearBoard();
 
-            var whiteKing = new Piece.King(true);
-            var blackKing = new Piece.King(false);
-            var whiteQueen = new Piece.Queen(true);
+            var whiteKing = new King(true);
+            var blackKing = new King(false);
+            var whiteQueen = new Queen(true);
 
             board.CreatePieces(whiteKing, 0, 0, whitePlayer);
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
