@@ -19,13 +19,28 @@ namespace ChessGame
         
         private ChessBoardSquare selectedSquare;
         private Game game;
+        public Action<Action<Piece>> ShowPromotionSelection { get; set; }
+
+        private bool _isPromotionVisible = true;
+        public bool IsPromotionVisible
+        {
+            get => _isPromotionVisible;
+            set
+            {
+                if (_isPromotionVisible != value)
+                {
+                    _isPromotionVisible = value;
+                    OnPropertyChanged(nameof(IsPromotionVisible));
+                }
+            }
+        }
+
 
         public MainWindowViewModel()
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
-            game = new Game(this);
-            InitializeChessBoardNumbers();
+            game = Game.GetInstance(this);
         }
 
         private void InitializeChessBoard()
@@ -76,11 +91,6 @@ namespace ChessGame
         public bool? GetSquareColor(int row, int col) {
            var square = ChessBoardSquares.FirstOrDefault(s => s.row == row && s.column == col);
            return square?.isWhiteSquare;
-        }
-
-        private void InitializeChessBoardNumbers()
-        {
-
         }
 
         private ImageSource GetInitialPieceImage(int row, int col)
@@ -148,11 +158,8 @@ namespace ChessGame
                     // Call movePiece and retrieve if move was successful and if en passant capture occurred
                     (bool moveSuccessful, bool enPassantCapture, bool CastleKingSide, bool CastleQueenSide) = game.movePiece(selectedSquare, square);
 
-
                     if (moveSuccessful)
                     {
-                        Debug.WriteLine($"Selected square: {selectedSquare.row}, {selectedSquare.column} Square: {square.row}, {square.column}");
-
                         Debug.WriteLine("Successful Move");
                         if (enPassantCapture)
                         {
@@ -188,9 +195,7 @@ namespace ChessGame
         {
             // Perform the move logic
             toSquare.PieceImage = fromSquare.PieceImage;
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
             fromSquare.PieceImage = null;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
 
             // Update UI after move
             OnPropertyChanged(nameof(ChessBoardSquares));
@@ -212,7 +217,6 @@ namespace ChessGame
             // If the enPassantSquare is found, clear the piece image from it
             if (enPassantSquare != null)
             {
-                Debug.WriteLine($"To Square.row: {toSquare.row}, to square.column: {toSquare.column}, to square.row+direction: {toSquare.row + direction}");
                 enPassantSquare.PieceImage = null; // This should clear the image from the UI
             }
 
@@ -273,6 +277,11 @@ namespace ChessGame
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public void PromptPawnPromotion(Action<Piece> onPieceSelected, bool isWhite)
+        {
+        
         }
     }
 }

@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Transactions;
 using System.Windows.Navigation;
+using ChessGame.Views;
 
 namespace ChessGame
 {
@@ -110,13 +111,10 @@ namespace ChessGame
                     return false;
                 }
 
-                if (board.IsKingInCheck(isWhite()))
+                if(board.willMovePutKingInCheck(start, end, isWhite()))
                 {
-                    if(board.willMovePutKingInCheck(start, end, isWhite()))
-                    {
-                        Debug.WriteLine("Move will put king in check");
-                        return false;
-                    }
+                    Debug.WriteLine("Move will put king in check");
+                    return false;
                 }
 
                 int rowDifference = Math.Abs(start.Row - end.Row);
@@ -480,14 +478,10 @@ namespace ChessGame
                 {
                     return false;
                 }
-
-                if (board.IsKingInCheck(isWhite()))
-                {
                     if (board.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
-                }
 
                 return true;
             }
@@ -498,7 +492,13 @@ namespace ChessGame
                 int RowMovementDirection = Math.Sign(endRow - startRow);
                 int ColumnMovementDirection = Math.Sign(endColumn - startColumn);
 
+                Debug.WriteLine("RowMovementDirection: " + RowMovementDirection);
+                Debug.WriteLine("ColumnMovementDirection: " + ColumnMovementDirection);
+
                 //verifies that the piece moves rows and columns 
+
+                Debug.WriteLine("RowDifference: " + Math.Abs(endRow - startRow));
+                Debug.WriteLine("ColumnDifference: " + Math.Abs(endColumn - startColumn));
                 if (Math.Abs(endRow - startRow) != Math.Abs(endColumn - startColumn))
                 {
                     return false;
@@ -508,12 +508,17 @@ namespace ChessGame
                 int currentRow = startRow + RowMovementDirection;
                 int currentColumn = startColumn + ColumnMovementDirection;
 
+                Debug.WriteLine($"Bishop Start Row: {startRow}");
+                Debug.WriteLine($"Bisop Start Column: {startColumn}");
                 //continues to check for pieces in the path of the move until the end square of movement is reached 
                 //returns false if a piece is found, regardless of color 
                 while (currentRow != endRow && currentColumn != endColumn)
                 {
-                    if (board.GetSpot(currentRow, currentColumn).Piece != null)
+                    Debug.WriteLine($"Current location for bishop search: ({currentRow},{currentColumn})");
+                    Piece PieceInWay = board.GetSpot(currentRow, currentColumn).Piece;
+                    if (PieceInWay != null)
                     {
+                        Debug.WriteLine($"Something in the mist {PieceInWay} at {currentRow},{currentColumn}");
                         return false;
                     }
 
@@ -537,10 +542,10 @@ namespace ChessGame
             public bool legalMove(Board board, Spot start, Spot end)
             {
                 //gets the starting and ending point for the queens move
-                int startRow = start.Column;
-                int startColumn = start.Row;
-                int endRow = end.Column;
-                int endColumn = end.Row;
+                int startRow = start.Row;
+                int startColumn = start.Column;
+                int endRow = end.Row;
+                int endColumn = end.Column;
 
                 //checks that the piece on the ending square is not of the same color as the moving piece
                 if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
@@ -554,9 +559,9 @@ namespace ChessGame
                     return false;
                 }
 
-                if (board.IsKingInCheck(isWhite()))
+                if (board.IsKingInCheck(this.isWhite()))
                 {
-                    if (board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (board.willMovePutKingInCheck(start, end, this.isWhite()))
                     {
                         return false;
                     }

@@ -1,0 +1,128 @@
+﻿<Window x:Class="ChessGame.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:ChessGame"
+        Title="Chess Game"
+        SizeToContent="WidthAndHeight"
+        Background="Black">
+
+    <Window.Resources>
+        <local:PositionConverter x:Key="PositionConverter"/>
+        <local:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <!-- Chessboard Area -->
+            <ColumnDefinition Width="200"/>
+            <!-- Control Panel on Right -->
+        </Grid.ColumnDefinitions>
+
+        <!-- Chessboard Area -->
+        <Viewbox Grid.Column="0" Stretch="Uniform">
+            <Grid Width="500" Height="500" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <!-- Outer Wood Background -->
+                <Grid.Background>
+                    <ImageBrush ImageSource="pack://application:,,,/Textures/WoodTexture.jpg"
+                                TileMode="Tile" Viewport="0,0,25,25" ViewportUnits="Absolute" />
+                </Grid.Background>
+
+                <!-- Inner Beige Board -->
+                <Border Name="InnerBorder" Background="Beige" Opacity="0.5" 
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Width="380" Height="380" Margin="60"/>
+
+                <!-- Main grid with padding -->
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="60"/>
+                        <RowDefinition Height="380"/>
+                        <RowDefinition Height="60"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="60"/>
+                        <ColumnDefinition Width="380"/>
+                        <ColumnDefinition Width="60"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Rank Labels -->
+                    <StackPanel Grid.Row="1" Grid.Column="0" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,10,5,5">
+                        <TextBlock Text="8" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="7" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="6" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="5" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="4" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="3" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="2" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                        <TextBlock Text="1" FontSize="16" FontWeight="Bold" Foreground="White" Height="47.5"/>
+                    </StackPanel>
+
+                    <!-- File Labels -->
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                        <TextBlock Text="A" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="B" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="C" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="D" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="E" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="F" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="G" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                        <TextBlock Text="H" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Chessboard Squares -->
+                    <Grid Grid.Row="1" Grid.Column="1" Width="380" Height="380" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <ItemsControl ItemsSource="{Binding ChessBoardSquares}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="8"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Width="47.5" Height="47.5" MouseDown="PieceImage_MouseDown">
+                                        <Border Background="{Binding Background}"
+                                                BorderBrush="{Binding IsHighlighted, Converter={StaticResource BooleanToHighlightBorderBrushConverter}}"
+                                                BorderThickness="3">
+                                            <Image Source="{Binding PieceImage}" Stretch="Uniform"/>
+                                        </Border>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </Grid>
+            </Grid>
+        </Viewbox>
+
+        <!-- Right-side control panel -->
+        <StackPanel Grid.Column="1"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="10">
+
+            <!-- Reset Button -->
+            <Button Width="120" Height="45"
+                    Content="Reset Game"
+                    Click="ResetGame_Click"
+                    Background="#DDDDDD"
+                    FontWeight="Bold"
+                    Opacity="0.9" />
+
+            <!-- Promotion Buttons -->
+            <StackPanel Orientation="Vertical"
+                        Visibility="{Binding IsPromotionVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+
+                <TextBlock Text="Promote to:" FontWeight="Bold" Foreground="White" Margin="0,10,0,5" TextAlignment="Center"/>
+
+                <Button Content="Queen" Width="100" Height="30" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Queen"/>
+                <Button Content="Rook" Width="100" Height="30" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Rook"/>
+                <Button Content="Bishop" Width="100" Height="30" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Bishop"/>
+                <Button Content="Knight" Width="100" Height="30" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Knight"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -13,6 +14,7 @@ namespace ChessGame
 {
     public class GameRules
     {
+        private static GameRules? instance;
         private Game game;
         private HashSet<Piece> activePieces;
         MainWindowViewModel viewModel;
@@ -22,6 +24,22 @@ namespace ChessGame
             this.game = game;
             this.activePieces = new HashSet<Piece>();
             this.viewModel = viewModel;
+
+        }
+
+        public static GameRules GetInstance(Game game, MainWindowViewModel viewModel)
+        {
+            if (instance == null)
+            {
+                instance = new GameRules(game, viewModel);
+            }
+            return instance;
+        }
+
+        internal static GameRules Create(Game game, MainWindowViewModel viewModel)
+        {
+            instance = new GameRules(game, viewModel);
+            return instance;
         }
 
         public bool? GetSquareColor(int row, int col)
@@ -32,12 +50,16 @@ namespace ChessGame
         {
             activePieces = new HashSet<Piece>(game.whitePlayer.GetPieces().Concat(game.blackPlayer.GetPieces()));
         }
+
+        public void InitializeActivePiecesForTest()
+        {
+            activePieces = new HashSet<Piece>();
+        }
         public (bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide) HandleMove(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
             Board board = game.board;
             Player currentTurn = game.currentTurn;
 
-            Debug.WriteLine($"Current Turn {currentTurn}");
             Spot start = board.GetSpot(fromSquare.row, fromSquare.column);
             Spot end = board.GetSpot(toSquare.row, toSquare.column);
             Piece? movingPiece = start?.Piece;
@@ -47,7 +69,7 @@ namespace ChessGame
                 return (false, false, false, false);
             }
 
-            else if (!board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
+            else if (board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
                 return (false, false, false, false);
             }
@@ -60,6 +82,7 @@ namespace ChessGame
 
             if (movingPiece.legalMove(board, start, end))
             {
+                Debug.WriteLine($"Legal move for {movingPiece}");
                 Piece? capturedPiece = end.Piece;
 
                 if (movingPiece is Piece.Pawn && enPassantCapture(movingPiece, toSquare, board, out Piece? enPassantCapturedPiece))
@@ -167,30 +190,6 @@ namespace ChessGame
 
         private void swapTurn()
         {
-            bool canMove = true;
-            // Update the threat map for the current turn
-            game.board.UpdateThreatMap(GetActivePieces(game.currentTurn.IsWhite));
-            Debug.WriteLine($"is white player: {game.currentTurn.IsWhite}");
-
-            Player oppositeTurn = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
-
-            // Check if the king is in check
-            if (game.board.IsKingInCheck(oppositeTurn.IsWhite))
-            {
-                Debug.WriteLine("Checking if the king is in checkmate");
-                (canMove, Spot spot) = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(!game.currentTurn.IsWhite));
-                foreach (Piece piece in GetActivePieces(!game.currentTurn.IsWhite))
-                {
-                    Debug.WriteLine($"Pieces used in check for legal moves: {piece}");
-                }
-            }
-
-            Debug.WriteLine($"Can Move: {canMove}");
-            if(!canMove)
-            {
-                Debug.WriteLine("CHECKMATE");
-            }
-
             // Swap the current turn to the opposite player
             Player currentTurn = game.currentTurn == game.whitePlayer ? game.blackPlayer : game.whitePlayer;
 
@@ -201,6 +200,9 @@ namespace ChessGame
             Debug.WriteLine($"Swapping turn. Current turn before swap: {(game.currentTurn.IsWhite ? "White" : "Black")}");
             game.SetCurrentTurn(currentTurn);
             Debug.WriteLine(currentTurn);
+
+            // Update the threat map for the current turn
+            game.board.UpdateThreatMap(GetActivePieces(!game.currentTurn.IsWhite));
         }
 
         
@@ -211,7 +213,10 @@ namespace ChessGame
 
         public void AddActivePiece(Piece piece)
         {
-            activePieces.Add(piece);
+            if (piece != null && !activePieces.Contains(piece))
+            {
+                activePieces.Add(piece);
+            }
         }
 
         public IEnumerable<Piece> GetActivePieces(bool isWhite)
@@ -232,7 +237,7 @@ namespace ChessGame
 
         private bool DrawKingBishopVKingBishop()
         {
-            if(activePieces.Count == 4 || activePieces.Count(p => p.type == Piece.PieceType.Bishop) != 2)
+            if(activePieces.Count != 4 || activePieces.Count(p => p.type == Piece.PieceType.Bishop) != 2)
             {
                 return false;
             }
@@ -247,8 +252,12 @@ namespace ChessGame
             int row2 = position2.Row;
             int col2 = position2.Column;
 
+            Debug.WriteLine($"Bishop 1 Position: ({row1}, {col1}) Bishop 2 Position: ({row2}, {col2})");
+
             bool? color1 = GetSquareColor(row1, col1);
             bool? color2 = GetSquareColor(row2, col2);
+
+            Debug.WriteLine($"Color 1: {color1} Color 2: {color2}");
 
             return color1.HasValue && color2.HasValue && color1.Value == color2.Value;
         }
@@ -262,7 +271,10 @@ namespace ChessGame
         {
             if(activePieces.Count == 4)
             {
-                return DrawKingBishopVKingBishop();
+                if (DrawKingBishopVKingBishop())
+                {
+                    return true;
+                }
             }
 
             else if(activePieces.Count == 3)
@@ -282,13 +294,34 @@ namespace ChessGame
             return false;
         }
 
+        public bool Checkmate(Board board)
+        {
+           bool canMove = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(game.currentTurn.IsWhite));
+
+            if (!canMove && board.IsKingInCheck(game.currentTurn.IsWhite))
+            {
+                Debug.WriteLine("Checkmate! Game Over.");
+                return true;
+            }
+            else if(!canMove)
+            {
+                Debug.WriteLine("Stalemate! No legal moves available.");
+                return true;
+            }
+
+            return false;
+        }
         private void PiecePositions(IEnumerable<Piece> activePieces)
         {
-            foreach(Piece piece in activePieces)
-            {
-                Debug.WriteLine($"Piece: {piece} Piece Position: {piece.getCurrentPosition()}");
-            }
             Debug.WriteLine(activePieces.Count());
+        }
+
+        public void promotions(Piece piece, Board board)
+        {
+            viewModel.ShowPromotionSelection?.Invoke(selectedPiece =>
+            {
+                
+            });
         }
     }
 }

@@ -1,19 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace ChessGame
+namespace ChessGame.Helpers
 {
-    public class BooleanToHighlightBorderBrushConverter : IValueConverter
+    public class PieceOpacityConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is bool isHighlighted && isHighlighted)
+            if (value is ImageSource)
             {
-                return Brushes.Yellow;  // Highlight color
+                return 1.0;
             }
-            return Brushes.Transparent;  // Default border color
+            return 0.5;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

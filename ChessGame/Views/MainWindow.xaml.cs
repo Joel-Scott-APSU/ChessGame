@@ -43,6 +43,7 @@ namespace ChessGame
 
         private void ResetGame_Click(object sender, RoutedEventArgs e) 
         {
+            Game.ResetInstance();
             DataContext = new MainWindowViewModel();
         }
 

@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Windows.Media;
+using ChessGame.Models;
 
-namespace ChessGame
+namespace ChessGame.Views
 {
     public class ChessBoardSquare : INotifyPropertyChanged
     {
@@ -20,8 +21,8 @@ namespace ChessGame
         {
             this.row = row;
             this.column = column;
-            this.Background = new VisualBrush();
-            
+            Background = new VisualBrush();
+
         }
         public ImageSource PieceImage
         {
