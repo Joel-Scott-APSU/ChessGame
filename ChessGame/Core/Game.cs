@@ -1,4 +1,6 @@
-﻿using ChessGame;
+﻿using ChessGame.Core;
+using ChessGame.Models;
+using ChessGame.Views;
 using System.Diagnostics;
 
 public class Game
@@ -11,6 +13,7 @@ public class Game
     public ChessBoardSquare selectedSquare { get; set; }
     public Moves moves { get; private set; }
 
+    public ThreatMap threatMap { get; private set; }
     public GameRules gameRules;
 
     // Private constructor to prevent multiple instances
@@ -37,7 +40,8 @@ public class Game
         whitePlayer = new Player(true, gameRules);
         blackPlayer = new Player(false, gameRules);
         board = new Board(whitePlayer, blackPlayer, this);
-        moves = new Moves(whitePlayer, blackPlayer, gameRules);
+        threatMap = new ThreatMap(whitePlayer, blackPlayer, this);
+        moves = new Moves(whitePlayer, blackPlayer, gameRules, threatMap);
         whitePlayer.clearCapturedPieces();
         blackPlayer.clearCapturedPieces();
         currentTurn = whitePlayer;

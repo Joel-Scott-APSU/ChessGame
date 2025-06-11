@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ChessGame
+namespace ChessGame.Models
 {
     public class Spot
     {

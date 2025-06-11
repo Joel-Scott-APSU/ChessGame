@@ -2,26 +2,32 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection.PortableExecutable;
+using System.Linq;
 using System.Windows;
-using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using ChessGame.Models;
+using ChessGame.Commands;
+using System.Windows.Controls;
 
-namespace ChessGame
+namespace ChessGame.Views
 {
     public class MainWindowViewModel : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
         public ObservableCollection<ChessBoardSquare> ChessBoardSquares { get; set; }
-        
-        private ChessBoardSquare selectedSquare;
-        private Game game;
-        public Action<Action<Piece>> ShowPromotionSelection { get; set; }
 
-        private bool _isPromotionVisible = true;
+        public ICommand PromoteCommand { get; }
+        private ChessBoardSquare selectedSquare;
+        private Board board => game.board;
+        private Game game;
+
+        public Action<Piece> PromotionCallback { get; set; } // Callback for promotion selection
+
+        private bool _isPromotionVisible = false;
         public bool IsPromotionVisible
         {
             get => _isPromotionVisible;
@@ -35,12 +41,35 @@ namespace ChessGame
             }
         }
 
+        private bool _promotionIsWhite; // Store promotion color
 
         public MainWindowViewModel()
         {
             ChessBoardSquares = new ObservableCollection<ChessBoardSquare>();
             InitializeChessBoard();
             game = Game.GetInstance(this);
+
+            PromoteCommand = new RelayCommand(param =>
+            {
+                if (param is string promotionType && PromotionCallback != null)
+                {
+                    Piece promotedPiece = promotionType switch
+                    {
+                        "Queen" => new Piece.Queen(_promotionIsWhite),
+                        "Rook" => new Piece.Rook(_promotionIsWhite),
+                        "Bishop" => new Piece.Bishop(_promotionIsWhite),
+                        "Knight" => new Piece.Knight(_promotionIsWhite),
+                        _ => null
+                    };
+
+                    if (promotedPiece != null)
+                    {
+                        PromotionCallback(promotedPiece);
+                        IsPromotionVisible = false;
+                        PromotionCallback = null;
+                    }
+                }
+            });
         }
 
         private void InitializeChessBoard()
@@ -52,15 +81,14 @@ namespace ChessGame
             {
                 for (int j = 0; j < 8; j++)
                 {
-                        var square = new ChessBoardSquare(i,j)
+                    var square = new ChessBoardSquare(i, j)
+                    {
+                        isWhiteSquare = isWhiteSquare,
+                        Background = new VisualBrush
                         {
-                            
-                            isWhiteSquare = isWhiteSquare, // Set the property here
-                            Background = new VisualBrush
+                            Visual = new Grid
                             {
-                                Visual = new Grid
-                                {
-                                    Children =
+                                Children =
                                 {
                                     new Image
                                     {
@@ -69,28 +97,26 @@ namespace ChessGame
                                     },
                                     new Rectangle
                                     {
-                                        Fill = (isWhiteSquare ? Brushes.White : darkSquareBrush),
+                                        Fill = isWhiteSquare ? Brushes.White : darkSquareBrush,
                                         Opacity = 0.5,
                                     }
                                 }
-                                }
-                            },
-                            PieceImage = GetInitialPieceImage(i, j)
-                        };
+                            }
+                        },
+                        PieceImage = GetInitialPieceImage(i, j)
+                    };
 
-                        ChessBoardSquares.Add(square);
-
-                        isWhiteSquare = !isWhiteSquare; // Toggle the color for the next square
-                    }
-
-                    // Toggle the color for the start of the next row
-                    isWhiteSquare = !isWhiteSquare;            
+                    ChessBoardSquares.Add(square);
+                    isWhiteSquare = !isWhiteSquare;
+                }
+                isWhiteSquare = !isWhiteSquare;
             }
         }
 
-        public bool? GetSquareColor(int row, int col) {
-           var square = ChessBoardSquares.FirstOrDefault(s => s.row == row && s.column == col);
-           return square?.isWhiteSquare;
+        public bool? GetSquareColor(int row, int col)
+        {
+            var square = ChessBoardSquares.FirstOrDefault(s => s.row == row && s.column == col);
+            return square?.isWhiteSquare;
         }
 
         private ImageSource GetInitialPieceImage(int row, int col)
@@ -101,21 +127,22 @@ namespace ChessGame
 
         private Piece GetInitialPiece(int row, int col)
         {
-            if (row == 1) return new Piece.Pawn(false);  // Black pawns on the second row from top
-            if (row == 6) return new Piece.Pawn(true);   // White pawns on the second row from bottom
+            if (row == 1) return new Piece.Pawn(false);
+            if (row == 6) return new Piece.Pawn(true);
 
             if (row == 0 || row == 7)
             {
-                bool isWhite = row == 7; // Bottom row (7) is white, top row (0) is black
+                bool isWhite = row == 7;
 
-                switch (col)
+                return col switch
                 {
-                    case 0: case 7: return new Piece.Rook(isWhite);
-                    case 1: case 6: return new Piece.Knight(isWhite);
-                    case 2: case 5: return new Piece.Bishop(isWhite);
-                    case 3: return new Piece.Queen(isWhite);
-                    case 4: return new Piece.King(isWhite);
-                }
+                    0 or 7 => new Piece.Rook(isWhite),
+                    1 or 6 => new Piece.Knight(isWhite),
+                    2 or 5 => new Piece.Bishop(isWhite),
+                    3 => new Piece.Queen(isWhite),
+                    4 => new Piece.King(isWhite),
+                    _ => null
+                };
             }
 
             return null;
@@ -128,7 +155,7 @@ namespace ChessGame
                 return null;
             }
 
-            string uri = $"pack://application:,,,/ChessPieces/{piece.type.ToString()}_{(piece.isWhite() ? "White" : "Black")}.png";
+            string uri = $"pack://application:,,,/ChessPieces/{piece.type}_{(piece.isWhite() ? "White" : "Black")}.png";
 
             try
             {
@@ -155,13 +182,31 @@ namespace ChessGame
             {
                 if (!square.IsHighlighted)
                 {
-                    // Call movePiece and retrieve if move was successful and if en passant capture occurred
                     (bool moveSuccessful, bool enPassantCapture, bool CastleKingSide, bool CastleQueenSide) = game.movePiece(selectedSquare, square);
 
                     if (moveSuccessful)
                     {
-                        Debug.WriteLine("Successful Move");
-                        if (enPassantCapture)
+                        if (square.piece is Piece.Pawn pawn)
+                        {
+                            bool promotionRow = (pawn.isWhite() && square.row == 0) || (!pawn.isWhite() && square.row == 7);
+                            if (promotionRow)
+                            {
+                                Spot promotionSpot = board.GetSpot(square.row, square.column);
+                                _promotionIsWhite = pawn.isWhite();  // Store color for promotion
+                                IsPromotionVisible = true;
+
+                                // Set the PromotionCallback for command to call later
+                                PromotionCallback = (promotedPiece) =>
+                                {
+                                    game.gameRules.PromotePawn(promotedPiece.type.ToString(), pawn, promotionSpot);
+                                    square.PieceImage = GetPieceImage(promotionSpot.Piece);
+
+                                    OnPropertyChanged(nameof(ChessBoardSquares));
+                                    IsPromotionVisible = false;
+                                };
+                            }
+                        }
+                        else if (enPassantCapture)
                         {
                             Debug.WriteLine("En Passant Capture is occurring in the UI");
                             MovePieceEnPassant(selectedSquare, square);
@@ -170,7 +215,6 @@ namespace ChessGame
                         {
                             MovePiecesCastleKingside(selectedSquare, square);
                         }
-
                         else if (CastleQueenSide)
                         {
                             MovePiecesCastleQueenside(selectedSquare, square);
@@ -183,105 +227,68 @@ namespace ChessGame
                 }
 
                 selectedSquare.IsHighlighted = false;
-#pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
                 selectedSquare = null;
-#pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
             }
         }
 
-
-
         private void MovePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
-            // Perform the move logic
             toSquare.PieceImage = fromSquare.PieceImage;
             fromSquare.PieceImage = null;
-
-            // Update UI after move
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
 
         private void MovePieceEnPassant(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
             Player player = game.currentTurn;
-
-            // Determine the direction based on the player's color
-            int direction = player.IsWhite ? -1 : 1; // Correct direction for en passant
-
-            // Calculate the row of the adjacent square for en passant
+            int direction = player.IsWhite ? -1 : 1;
             int enPassantRow = toSquare.row + direction;
 
-            // Use FindSquare to locate the en passant square
             ChessBoardSquare enPassantSquare = FindSquare(enPassantRow, toSquare.column);
-
-            // If the enPassantSquare is found, clear the piece image from it
             if (enPassantSquare != null)
             {
-                enPassantSquare.PieceImage = null; // This should clear the image from the UI
+                enPassantSquare.PieceImage = null;
             }
 
-            // Move the piece image to the toSquare
             toSquare.PieceImage = fromSquare.PieceImage;
             fromSquare.PieceImage = null;
-
-            // Notify that the ChessBoardSquares collection has changed, triggering a UI update
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
 
         private void MovePiecesCastleKingside(ChessBoardSquare kingSquare, ChessBoardSquare rookSquare)
         {
-            // Find the target squares for the king and the rook
             ChessBoardSquare kingTarget = FindSquare(kingSquare.row, kingSquare.column + 2);
             ChessBoardSquare rookTarget = FindSquare(rookSquare.row, kingSquare.column + 1);
 
-            // Move the king and rook to their respective target squares
-            kingTarget.PieceImage = kingSquare.PieceImage; // King moves two squares to the right
-            rookTarget.PieceImage = rookSquare.PieceImage; // Rook moves next to the king's new position
+            kingTarget.PieceImage = kingSquare.PieceImage;
+            rookTarget.PieceImage = rookSquare.PieceImage;
 
-            // Clear the original squares of the king and rook
             kingSquare.PieceImage = null;
             rookSquare.PieceImage = null;
-
-            // Notify UI that the board has been updated
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
 
         private void MovePiecesCastleQueenside(ChessBoardSquare kingSquare, ChessBoardSquare rookSquare)
         {
-            // Find the target squares for the king and the rook
             ChessBoardSquare kingTarget = FindSquare(kingSquare.row, kingSquare.column - 2);
             ChessBoardSquare rookTarget = FindSquare(rookSquare.row, kingSquare.column - 1);
 
-            // Move the king and rook to their respective target squares
-            kingTarget.PieceImage = kingSquare.PieceImage; // King moves two squares to the left
-            rookTarget.PieceImage = rookSquare.PieceImage; // Rook moves next to the king's new position
+            kingTarget.PieceImage = kingSquare.PieceImage;
+            rookTarget.PieceImage = rookSquare.PieceImage;
 
-            // Clear the original squares of the king and rook
             kingSquare.PieceImage = null;
             rookSquare.PieceImage = null;
-
-            // Notify UI that the board has been updated
             OnPropertyChanged(nameof(ChessBoardSquares));
         }
 
-
-
-        // Helper method to find a ChessBoardSquare by its row and column
         private ChessBoardSquare FindSquare(int row, int column)
         {
-            // Search for the square in the ChessBoardSquares collection
             return ChessBoardSquares.FirstOrDefault(square => square.row == row && square.column == column);
         }
-
 
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-        }
-
-        public void PromptPawnPromotion(Action<Piece> onPieceSelected, bool isWhite)
-        {
-        
         }
     }
 }

@@ -3,41 +3,44 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Windows.Input;
-using static ChessGame.Piece;
+using ChessGame.Core;
+using static ChessGame.Models.Piece;
 
-namespace ChessGame
+namespace ChessGame.Models
 {
     public class Moves
     {
         private Player whitePlayer;
         private Player blackPlayer;
         private GameRules gameRules;
+        private ThreatMap threatMap;
 
-        public Moves(Player whitePlayer, Player blackPlayer, GameRules gameRules)
+        public Moves(Player whitePlayer, Player blackPlayer, GameRules gameRules, ThreatMap threat)
         {
             this.blackPlayer = blackPlayer;
             this.whitePlayer = whitePlayer;
             this.gameRules = gameRules;
+            threatMap = threat;
         }
 
         public bool checkForLegalMoves(Player player, Board board, IEnumerable<Piece> pieces)
-        { 
+        {
             try
             {
-                var bishopDirections = new List<Piece.Direction>
+                var bishopDirections = new List<Direction>
                 {
-                    Piece.Direction.Northeast,
-                    Piece.Direction.Southwest,
-                    Piece.Direction.Southeast,
-                    Piece.Direction.Northwest
+                    Direction.Northeast,
+                    Direction.Southwest,
+                    Direction.Southeast,
+                    Direction.Northwest
                 };
 
-                var rookDirections = new List<Piece.Direction>
+                var rookDirections = new List<Direction>
                 {
-                    Piece.Direction.North,
-                    Piece.Direction.South,
-                    Piece.Direction.East,
-                    Piece.Direction.West
+                    Direction.North,
+                    Direction.South,
+                    Direction.East,
+                    Direction.West
                 };
 
                 foreach (Piece piece in pieces.ToList())
@@ -47,37 +50,37 @@ namespace ChessGame
 
                     switch (piece.type)
                     {
-                        case Piece.PieceType.Rook:
+                        case PieceType.Rook:
                             foreach (var direction in rookDirections)
                             {
-                                if (checkRookMoves(player, direction, board, start))
+                                if (checkRookMoves(player, direction, board, start, threatMap))
                                 {
                                     Debug.WriteLine($"Rook can move in Direction: {direction}");
                                     return true;
                                 }
                             }
                             break;
-                            
-                        case Piece.PieceType.Pawn:
-                            if (checkPawnMoves(player, start, board, piece))
+
+                        case PieceType.Pawn:
+                            if (checkPawnMoves(player, start, board, piece, threatMap))
                             {
                                 Debug.WriteLine($"Pawn can move");
                                 return true;
                             }
                             break;
-                            
-                        case Piece.PieceType.Knight:
-                            if (checkKnightMoves(player, start, board))
+
+                        case PieceType.Knight:
+                            if (checkKnightMoves(player, start, board, threatMap))
                             {
                                 Debug.WriteLine($"Knight can move");
                                 return true;
                             }
                             break;
-                            
-                        case Piece.PieceType.Bishop:
+
+                        case PieceType.Bishop:
                             foreach (var direction in bishopDirections)
                             {
-                                if (checkBishopMoves(player, start, board, direction))
+                                if (checkBishopMoves(player, start, board, direction, threatMap))
                                 {
                                     Debug.WriteLine($"Bishop can move in Direction: {direction}");
                                     return true;
@@ -85,10 +88,10 @@ namespace ChessGame
                             }
                             break;
 
-                        case Piece.PieceType.Queen:
+                        case PieceType.Queen:
                             foreach (var direction in rookDirections)
                             {
-                                if (checkRookMoves(player, direction, board, start))
+                                if (checkRookMoves(player, direction, board, start, threatMap))
                                 {
                                     Debug.WriteLine($"Queen can move in Direction: {direction}");
                                     return true;
@@ -96,7 +99,7 @@ namespace ChessGame
                             }
                             foreach (var direction in bishopDirections)
                             {
-                                if (checkBishopMoves(player, start, board, direction))
+                                if (checkBishopMoves(player, start, board, direction, threatMap))
                                 {
                                     Debug.WriteLine($"Queen can move in Direction: {direction}");
                                     return true;
@@ -104,10 +107,10 @@ namespace ChessGame
                             }
                             break;
 
-                        case Piece.PieceType.King:
-                            foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
+                        case PieceType.King:
+                            foreach (Direction direction in Enum.GetValues(typeof(Direction)))
                             {
-                                if (checkKingMoves(player, start, board, direction))
+                                if (checkKingMoves(player, start, board, direction, threatMap))
                                 {
                                     Debug.WriteLine($"King can move in Direction: {direction}");
                                     return true;
@@ -124,16 +127,16 @@ namespace ChessGame
             return false;
         }
 
-        private bool checkRookMoves(Player player, Piece.Direction direction, Board board, Spot start)
+        private bool checkRookMoves(Player player, Direction direction, Board board, Spot start, ThreatMap threat)
         {
             int rowDelta = 0, colDelta = 0;
 
             switch (direction)
             {
-                case Piece.Direction.North: rowDelta = -1; break;
-                case Piece.Direction.South: rowDelta = 1; break;
-                case Piece.Direction.East: colDelta = 1; break;
-                case Piece.Direction.West: colDelta = -1; break;
+                case Direction.North: rowDelta = -1; break;
+                case Direction.South: rowDelta = 1; break;
+                case Direction.East: colDelta = 1; break;
+                case Direction.West: colDelta = -1; break;
                 default: return false;
             }
 
@@ -147,13 +150,13 @@ namespace ChessGame
 
                 if (currentPiece != null && currentPiece.isWhite() != start.Piece.isWhite())
                 {
-                    if (!board.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
+                    if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
                         return true;
                     break;
                 }
                 else if (currentPiece == null)
                 {
-                    if (!board.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
+                    if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
                         return true;
                 }
                 else
@@ -167,8 +170,8 @@ namespace ChessGame
 
             return false;
         }
-        
-        private bool checkPawnMoves(Player player, Spot start, Board board, Piece pawn)
+
+        private bool checkPawnMoves(Player player, Spot start, Board board, Piece pawn, ThreatMap threat)
         {
             int direction = player.IsWhite ? -1 : 1;
             int row = start.Row;
@@ -186,7 +189,7 @@ namespace ChessGame
 
                     if (targetPiece != null && targetPiece.isWhite() != pawn.isWhite())
                     {
-                        if (!board.willMovePutKingInCheck(start, attackSpot, player.IsWhite))
+                        if (!threat.willMovePutKingInCheck(start, attackSpot, player.IsWhite))
                             return true;
                     }
                 }
@@ -195,27 +198,27 @@ namespace ChessGame
             int forwardRow = row + direction;
             if (forwardRow >= 0 && forwardRow < 8 && board.GetSpot(forwardRow, col).Piece == null)
             {
-                if (!board.willMovePutKingInCheck(start, board.GetSpot(forwardRow, col), player.IsWhite))
+                if (!threat.willMovePutKingInCheck(start, board.GetSpot(forwardRow, col), player.IsWhite))
                     return true;
             }
 
-            if ((pawn.isWhite() && row == 6) || (!pawn.isWhite() && row == 1))
+            if (pawn.isWhite() && row == 6 || !pawn.isWhite() && row == 1)
             {
                 int middleRow = row + direction;
                 int doubleMoveRow = row + 2 * direction;
 
                 if (board.GetSpot(middleRow, col).Piece == null && board.GetSpot(doubleMoveRow, col).Piece == null)
                 {
-                    if (!board.willMovePutKingInCheck(start, board.GetSpot(doubleMoveRow, col), player.IsWhite))
+                    if (!threat.willMovePutKingInCheck(start, board.GetSpot(doubleMoveRow, col), player.IsWhite))
                         return true;
                 }
             }
 
             return false;
         }
-        
 
-        private bool checkKnightMoves(Player player, Spot start, Board board)
+
+        private bool checkKnightMoves(Player player, Spot start, Board board, ThreatMap threat)
         {
             int[] rowOffsets = { 2, 2, 1, -1, -2, -2, 1, -1 };
             int[] colOffsets = { -1, 1, -2, -2, -1, 1, 2, 2 };
@@ -236,10 +239,10 @@ namespace ChessGame
                     if (targetPiece == null || targetPiece.isWhite() != startPiece.isWhite())
                     {
                         // Simulate the move and check if it puts the king in check
-                        if (!board.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
+                        if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
                         {
                             // Check if the king is in check after the move (important!)
-                            bool kingInCheck = board.IsKingInCheck(player.IsWhite);
+                            bool kingInCheck = threat.IsKingInCheck(player.IsWhite);
 
                             // If the king is not in check, it's a valid move
                             if (!kingInCheck)
@@ -254,16 +257,16 @@ namespace ChessGame
         }
 
 
-        private bool checkBishopMoves(Player player, Spot start, Board board, Piece.Direction direction)
+        private bool checkBishopMoves(Player player, Spot start, Board board, Direction direction, ThreatMap threat)
         {
             int colDelta;
             int rowDelta;
             switch (direction)
             {
-                case Piece.Direction.Northeast: rowDelta = -1; colDelta = 1; break;
-                case Piece.Direction.Northwest: rowDelta = -1; colDelta = -1; break;
-                case Piece.Direction.Southeast: rowDelta = 1; colDelta = 1; break;
-                case Piece.Direction.Southwest: rowDelta = 1; colDelta = -1; break;
+                case Direction.Northeast: rowDelta = -1; colDelta = 1; break;
+                case Direction.Northwest: rowDelta = -1; colDelta = -1; break;
+                case Direction.Southeast: rowDelta = 1; colDelta = 1; break;
+                case Direction.Southwest: rowDelta = 1; colDelta = -1; break;
                 default: return false;
             }
 
@@ -281,10 +284,10 @@ namespace ChessGame
                     break;
 
                 // Simulate the move and check if it would put the king in check
-                if (!board.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
+                if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
                 {
                     // Check if the king is in check after the simulated move (important!)
-                    bool kingInCheck = board.IsKingInCheck(player.IsWhite);
+                    bool kingInCheck = threat.IsKingInCheck(player.IsWhite);
                     if (!kingInCheck)
                     {
                         return true;  // The move is legal, as it doesn't put the king in check
@@ -303,7 +306,7 @@ namespace ChessGame
         }
 
 
-        private bool checkKingMoves(Player player, Spot start, Board board, Piece.Direction direction)
+        private bool checkKingMoves(Player player, Spot start, Board board, Direction direction, ThreatMap threat)
         {
             int row = start.Row, col = start.Column;
             int newRow = row, newCol = col;
@@ -311,14 +314,14 @@ namespace ChessGame
             // Calculate the target position based on the direction
             switch (direction)
             {
-                case Piece.Direction.North: newRow -= 1; break;
-                case Piece.Direction.South: newRow += 1; break;
-                case Piece.Direction.East: newCol += 1; break;
-                case Piece.Direction.West: newCol -= 1; break;
-                case Piece.Direction.Northeast: newRow -= 1; newCol += 1; break;
-                case Piece.Direction.Northwest: newRow -= 1; newCol -= 1; break;
-                case Piece.Direction.Southeast: newRow += 1; newCol += 1; break;
-                case Piece.Direction.Southwest: newRow += 1; newCol -= 1; break;
+                case Direction.North: newRow -= 1; break;
+                case Direction.South: newRow += 1; break;
+                case Direction.East: newCol += 1; break;
+                case Direction.West: newCol -= 1; break;
+                case Direction.Northeast: newRow -= 1; newCol += 1; break;
+                case Direction.Northwest: newRow -= 1; newCol -= 1; break;
+                case Direction.Southeast: newRow += 1; newCol += 1; break;
+                case Direction.Southwest: newRow += 1; newCol -= 1; break;
                 default: return false;
             }
 
@@ -328,14 +331,14 @@ namespace ChessGame
 
             Spot moveSpot = board.GetSpot(newRow, newCol);
             Piece targetPiece = moveSpot.Piece;
-            
-            
+
+
             // Don't move into a square occupied by a friendly piece
             if (targetPiece != null && targetPiece.isWhite() == start.Piece.isWhite())
                 return false;
 
             // Simulate the move and check if the king would still be in check
-            if (!board.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
+            if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
             {
                 Debug.WriteLine("King can legally move to: " + moveSpot);
                 return true;

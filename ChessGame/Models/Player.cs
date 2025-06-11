@@ -1,6 +1,7 @@
-﻿using ChessGame;
+﻿using ChessGame.Core;
+using ChessGame.Models;
 using System.Diagnostics;
-using static ChessGame.Piece;
+using static ChessGame.Models.Piece;
 
 public class Player
 {

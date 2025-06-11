@@ -1,14 +1,7 @@
-﻿using System.Runtime.InteropServices.Marshalling;
-using System.Text;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using ChessGame.Views;
 
 namespace ChessGame
 {
@@ -17,35 +10,37 @@ namespace ChessGame
     /// </summary>
     public partial class MainWindow : Window
     {
+        private MainWindowViewModel viewModel;
+
         public MainWindow()
         {
             InitializeComponent();
+
             double newWidth = this.Width * 0.75;
             double newHeight = this.Height * 0.75;
 
-            // Set the new width and height for the window
             this.Width = newWidth;
             this.Height = newHeight;
 
-            DataContext = new MainWindowViewModel();
+            viewModel = new MainWindowViewModel();
+            DataContext = viewModel;
 
-
+            // Removed ShowPromotionSelection delegate hookup
         }
 
         private void PieceImage_MouseDown(object sender, MouseButtonEventArgs e)
         {
             if (sender is Grid grid && grid.DataContext is ChessBoardSquare square)
             {
-                var viewModel = this.DataContext as MainWindowViewModel;
-                viewModel.OnSquareSelected(square);  // Pass the clicked square to the view model
+                viewModel.OnSquareSelected(square);
             }
         }
 
-        private void ResetGame_Click(object sender, RoutedEventArgs e) 
+        private void ResetGame_Click(object sender, RoutedEventArgs e)
         {
             Game.ResetInstance();
-            DataContext = new MainWindowViewModel();
+            viewModel = new MainWindowViewModel();
+            DataContext = viewModel;
         }
-
     }
 }

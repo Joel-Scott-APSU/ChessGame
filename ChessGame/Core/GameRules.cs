@@ -1,4 +1,5 @@
-﻿using ChessGame;
+﻿using ChessGame.Models;
+using ChessGame.Views;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Input;
 
-namespace ChessGame
+namespace ChessGame.Core
 {
     public class GameRules
     {
@@ -18,13 +19,14 @@ namespace ChessGame
         private Game game;
         private HashSet<Piece> activePieces;
         MainWindowViewModel viewModel;
+        private ThreatMap threatMap => game.threatMap;
+        private Board board => game.board;
 
         public GameRules(Game game, MainWindowViewModel viewModel)
         {
             this.game = game;
-            this.activePieces = new HashSet<Piece>();
+            activePieces = new HashSet<Piece>();
             this.viewModel = viewModel;
-
         }
 
         public static GameRules GetInstance(Game game, MainWindowViewModel viewModel)
@@ -64,12 +66,14 @@ namespace ChessGame
             Spot end = board.GetSpot(toSquare.row, toSquare.column);
             Piece? movingPiece = start?.Piece;
 
+            Debug.WriteLine($"Start: {start} End: {end} Moving Piece: {movingPiece} Current Turn: {currentTurn.IsWhite}");
+
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
                 return (false, false, false, false);
             }
 
-            else if (board.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
+            else if (threatMap.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
                 return (false, false, false, false);
             }
@@ -80,10 +84,11 @@ namespace ChessGame
             bool castledKingSide = false;
             bool castledQueenSide = false;
 
-            if (movingPiece.legalMove(board, start, end))
+            if (movingPiece.legalMove(threatMap, start, end, board))
             {
                 Debug.WriteLine($"Legal move for {movingPiece}");
                 Piece? capturedPiece = end.Piece;
+
 
                 if (movingPiece is Piece.Pawn && enPassantCapture(movingPiece, toSquare, board, out Piece? enPassantCapturedPiece))
                 {
@@ -120,7 +125,7 @@ namespace ChessGame
             if (moveSuccessful)
             {
                 PiecePositions(GetActivePieces(currentTurn.IsWhite));
-                swapTurn(); 
+                swapTurn();
             }
 
             return (moveSuccessful, enPassantCaptureOccurred, castledKingSide, castledQueenSide);
@@ -150,8 +155,8 @@ namespace ChessGame
         private bool PerformCastling(Piece.King king, ChessBoardSquare fromSquare, bool isKingside, Board board)
         {
             // Verify if castling conditions are satisfied
-            if ((isKingside && king.canCastleKingside(king.isWhite(), board)) ||
-                (!isKingside && king.canCastleQueenside(king.isWhite(), board)))
+            if (isKingside && king.canCastleKingside(king.isWhite(), threatMap, board) ||
+                !isKingside && king.canCastleQueenside(king.isWhite(), threatMap, board))
             {
                 // Define columns for the rook and king's movements
                 int rookColumn = isKingside ? 7 : 0; // Rook's starting column
@@ -202,10 +207,10 @@ namespace ChessGame
             Debug.WriteLine(currentTurn);
 
             // Update the threat map for the current turn
-            game.board.UpdateThreatMap(GetActivePieces(!game.currentTurn.IsWhite));
+            game.threatMap.UpdateThreatMap(GetActivePieces(!game.currentTurn.IsWhite));
         }
 
-        
+
         public void RemoveActivePiece(Piece piece)
         {
             activePieces.Remove(piece);
@@ -237,7 +242,7 @@ namespace ChessGame
 
         private bool DrawKingBishopVKingBishop()
         {
-            if(activePieces.Count != 4 || activePieces.Count(p => p.type == Piece.PieceType.Bishop) != 2)
+            if (activePieces.Count != 4 || activePieces.Count(p => p.type == Piece.PieceType.Bishop) != 2)
             {
                 return false;
             }
@@ -269,7 +274,7 @@ namespace ChessGame
 
         public bool Draw()
         {
-            if(activePieces.Count == 4)
+            if (activePieces.Count == 4)
             {
                 if (DrawKingBishopVKingBishop())
                 {
@@ -277,9 +282,9 @@ namespace ChessGame
                 }
             }
 
-            else if(activePieces.Count == 3)
+            else if (activePieces.Count == 3)
             {
-                if(DrawKingBishopVKing() || DrawKingKnightVKing())
+                if (DrawKingBishopVKing() || DrawKingKnightVKing())
                 {
                     return true;
                 }
@@ -296,14 +301,14 @@ namespace ChessGame
 
         public bool Checkmate(Board board)
         {
-           bool canMove = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(game.currentTurn.IsWhite));
+            bool canMove = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(game.currentTurn.IsWhite));
 
-            if (!canMove && board.IsKingInCheck(game.currentTurn.IsWhite))
+            if (!canMove && threatMap.IsKingInCheck(game.currentTurn.IsWhite))
             {
                 Debug.WriteLine("Checkmate! Game Over.");
                 return true;
             }
-            else if(!canMove)
+            else if (!canMove)
             {
                 Debug.WriteLine("Stalemate! No legal moves available.");
                 return true;
@@ -316,12 +321,37 @@ namespace ChessGame
             Debug.WriteLine(activePieces.Count());
         }
 
-        public void promotions(Piece piece, Board board)
+        public void promotions(Piece piece, Spot promotionSpot, string PromotionType)
         {
-            viewModel.ShowPromotionSelection?.Invoke(selectedPiece =>
+            if(piece is Piece.Pawn pawn)
             {
-                
-            });
+                int row = pawn.getCurrentPosition().Row;
+                bool isPromotionRow = (pawn.isWhite() && row == 0) || (!pawn.isWhite() && row == 7);
+
+                if (isPromotionRow)
+                {
+                    PromotePawn(PromotionType, pawn, promotionSpot);
+                }
+            }
+        }
+
+        public void PromotePawn(string PromotionType, Piece.Pawn pawn, Spot promotionSpot)
+        {
+            Piece? newPiece = null;
+
+            Player currentPlayer = pawn.isWhite() ? game.whitePlayer : game.blackPlayer;
+            Piece promotedPiece = PromotionType switch
+            {
+                "Queen" => new Piece.Queen(pawn.isWhite()),
+                "Rook" => new Piece.Rook(pawn.isWhite()),
+                "Bishop" => new Piece.Bishop(pawn.isWhite()),
+                "Knight" => new Piece.Knight(pawn.isWhite()),
+                _ => throw new ArgumentException("Invalid Promotion Type")
+            };
+
+            CapturePiece(pawn); // Remove the pawn from active pieces
+
+            board.CreatePieces(promotedPiece, promotionSpot.Row, promotionSpot.Column, currentPlayer);
         }
     }
 }

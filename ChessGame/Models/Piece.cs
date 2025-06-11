@@ -11,7 +11,7 @@ using System.Transactions;
 using System.Windows.Navigation;
 using ChessGame.Views;
 
-namespace ChessGame
+namespace ChessGame.Models
 {
     public abstract class Piece
     {
@@ -22,25 +22,25 @@ namespace ChessGame
 
         public Piece(bool white)
         {
-            this.setWhite(white);
+            setWhite(white);
 #pragma warning disable CS8625 // Cannot convert null literal to non-nullable reference type.
-            this.currentPosition = null;
+            currentPosition = null;
 #pragma warning restore CS8625 // Cannot convert null literal to non-nullable reference type.
         }
 
-        public bool isWhite() { return this.white; }
+        public bool isWhite() { return white; }
 
         public void setWhite(bool white) { this.white = white; }
 
-        public bool isTaken() { return this.taken; }
+        public bool isTaken() { return taken; }
 
         public void setTaken(bool taken) { this.taken = taken; }
 
         public Spot getCurrentPosition() { return currentPosition; }
 
-        public void setCurrentPosition(Spot position) { this.currentPosition = position; }
+        public void setCurrentPosition(Spot position) { currentPosition = position; }
 
-        public abstract bool legalMove(Board board, Spot start, Spot end);
+        public abstract bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board);
 
         public enum PieceType
         {
@@ -98,20 +98,20 @@ namespace ChessGame
 
             public King(bool white) : base(white)
             {
-                this.type = PieceType.King;
+                type = PieceType.King;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
                 //Check to see if the spot where we are trying to move to is already occupied by a piece of that color
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
 
                     return false;
                 }
 
-                if(board.willMovePutKingInCheck(start, end, isWhite()))
+                if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
                 {
                     Debug.WriteLine("Move will put king in check");
                     return false;
@@ -129,7 +129,7 @@ namespace ChessGame
                 return true;
             }
 
-            public bool canCastleKingside(bool isWhite, Board board)
+            public bool canCastleKingside(bool isWhite, ThreatMap threatMap, Board board)
             {
                 int row = isWhite ? 7 : 0;
 
@@ -138,7 +138,7 @@ namespace ChessGame
 
                 if (kingSpot == null || rookSpot == null) return false;
 
-                if (board.IsKingInCheck(isWhite)) return false;
+                if (threatMap.IsKingInCheck(isWhite)) return false;
 
                 if (kingSpot.Piece is King king && rookSpot.Piece is Rook rook)
                 {
@@ -149,7 +149,7 @@ namespace ChessGame
 
                     for (int i = 5; i <= 6; i++)
                     {
-                        if (board.GetSpot(row, i).Piece != null || board.IsSquareUnderThreat(isWhite, row, i))
+                        if (board.GetSpot(row, i).Piece != null || threatMap.IsSquareUnderThreat(isWhite, row, i))
                         {
                             return false;
                         }
@@ -159,7 +159,7 @@ namespace ChessGame
                 return true;
             }
 
-            public bool canCastleQueenside(bool isWhite, Board board)
+            public bool canCastleQueenside(bool isWhite, ThreatMap threatMap, Board board)
             {
                 int row = isWhite ? 7 : 0;
 
@@ -168,7 +168,7 @@ namespace ChessGame
 
                 if (kingSpot == null || rookSpot == null) return false;
 
-                if (board.IsKingInCheck(isWhite)) return false;
+                if (threatMap.IsKingInCheck(isWhite)) return false;
 
                 if (kingSpot.Piece is King king && rookSpot.Piece is Rook rook)
                 {
@@ -176,7 +176,7 @@ namespace ChessGame
 
                     for (int i = 3; i > 1; i--)
                     {
-                        if (board.IsSquareUnderThreat(isWhite, row, i) || board.GetSpot(row, i).Piece != null) return false;
+                        if (threatMap.IsSquareUnderThreat(isWhite, row, i) || board.GetSpot(row, i).Piece != null) return false;
                     }
 
                     if (board.GetSpot(row, 1).Piece != null) return false;
@@ -191,17 +191,17 @@ namespace ChessGame
          * ********************************/
         public class Pawn : Piece
         {
-            public bool isEnPassant {  get; set; }
+            public bool isEnPassant { get; set; }
             public Pawn(bool white) : base(white)
             {
-                this.type = PieceType.Pawn;
+                type = PieceType.Pawn;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
                 //verifies that the end square does not contain a piece of the same color 
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
                     return false;
                 }
@@ -210,15 +210,15 @@ namespace ChessGame
                 int rowDifference = end.Row - start.Row;
                 int columnDifference = Math.Abs(start.Column - end.Column);
 
-                if (board.IsKingInCheck(isWhite()))
+                if (threatMap.IsKingInCheck(isWhite()))
                 {
-                    if (board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
                 }
 
-                this.isEnPassant = false;
+                isEnPassant = false;
 
                 // White pawn moves
                 if (isWhite())
@@ -232,7 +232,7 @@ namespace ChessGame
                     // Forward move by 2 from the starting position
                     if (start.Row == 6 && rowDifference == -2 && columnDifference == 0 && end.Piece == null)
                     {
-                        this.isEnPassant = true;
+                        isEnPassant = true;
                         return true;
                     }
                     // Capture move
@@ -253,7 +253,8 @@ namespace ChessGame
                             {
                                 return true;
                             }
-                        }catch(NullReferenceException e)
+                        }
+                        catch (NullReferenceException e)
                         {
                             Console.WriteLine("En passant piece does not exist at given location " + e.Message);
                         }
@@ -271,7 +272,7 @@ namespace ChessGame
                     // Forward move by 2 from the starting position
                     if (start.Row == 1 && rowDifference == 2 && columnDifference == 0 && end.Piece == null)
                     {
-                        this.isEnPassant = true;
+                        isEnPassant = true;
                         return true;
                     }
                     // Capture move
@@ -303,16 +304,16 @@ namespace ChessGame
             }
 
             //Checks if the pawn is able to attack based on its position and the position of pieces around it 
-            public bool canPawnAttack(Board board, Spot start, Spot end)
+            public bool canPawnAttack(ThreatMap threatMap, Spot start, Spot end)
             {
                 //adjacent directions on either side of the pawn
                 int direction = isWhite() ? 1 : -1;
                 //row that the pawn is attempting to move to
-                int row = (end.Row - start.Row);
+                int row = end.Row - start.Row;
                 //column the pawn is attempting to move to 
                 int column = Math.Abs(start.Column - end.Column);
                 //verifies that the movement is correct and that the piece its attacking is of the opposite color 
-                return (direction == column && row == 1 && end.Piece != null && end.Piece.isWhite() != this.isWhite());
+                return direction == column && row == 1 && end.Piece != null && end.Piece.isWhite() != isWhite();
             }
         }
 
@@ -334,11 +335,11 @@ namespace ChessGame
 
             public Rook(bool white) : base(white)
             {
-                this.type = PieceType.Rook;
+                type = PieceType.Rook;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
                 //gets the starting and ending points of the rook 
                 int startRow = start.Row;
@@ -347,7 +348,7 @@ namespace ChessGame
                 int endColumn = end.Column;
 
                 //spot is occupied by a piece of the same color 
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
                     return false;
                 }
@@ -358,9 +359,9 @@ namespace ChessGame
                     return false;
                 }
 
-                if (board.IsKingInCheck(isWhite()))
+                if (threatMap.IsKingInCheck(isWhite()))
                 {
-                    if (board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -377,8 +378,8 @@ namespace ChessGame
 
             public static bool legalRookMove(Board board, int startRow, int startColumn, int endRow, int endColumn)
             {
-                int movementDirectionX = (endRow - startRow) == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
-                int movementDirectionY = (endColumn - startColumn) == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
+                int movementDirectionX = endRow - startRow == 0 ? 0 : (endRow - startRow) / Math.Abs(endRow - startRow);
+                int movementDirectionY = endColumn - startColumn == 0 ? 0 : (endColumn - startColumn) / Math.Abs(endColumn - startColumn);
 
                 if (movementDirectionX != 0 && movementDirectionY != 0)
                 {
@@ -408,15 +409,15 @@ namespace ChessGame
         {
             public Knight(bool white) : base(white)
             {
-                this.type = PieceType.Knight;
+                type = PieceType.Knight;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
 
                 //checks to see if the piece at the end square is of the same color as the knight 
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
                     return false;
                 }
@@ -426,14 +427,14 @@ namespace ChessGame
                 int row = Math.Abs(start.Row - end.Row);
 
                 //verifies that the knight movement multiplies to 2 
-                if ((column * row) != 2)
+                if (column * row != 2)
                 {
                     return false;
                 }
 
-                if (board.IsKingInCheck(isWhite()))
+                if (threatMap.IsKingInCheck(isWhite()))
                 {
-                    if (board.willMovePutKingInCheck(start, end, isWhite()))
+                    if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }
@@ -449,11 +450,11 @@ namespace ChessGame
         {
             public Bishop(bool white) : base(white)
             {
-                this.type = PieceType.Bishop;
+                type = PieceType.Bishop;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
                 //gets the start and end position of the bishop movement
                 int startRow = start.Row;
@@ -462,7 +463,7 @@ namespace ChessGame
                 int endColumn = end.Column;
 
                 //checks to see if the square is occupied by a piece of the same color 
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
                     return false;
                 }
@@ -478,10 +479,10 @@ namespace ChessGame
                 {
                     return false;
                 }
-                    if (board.willMovePutKingInCheck(start, end, isWhite()))
-                    {
-                        return false;
-                    }
+                if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
+                {
+                    return false;
+                }
 
                 return true;
             }
@@ -535,11 +536,11 @@ namespace ChessGame
         {
             public Queen(bool white) : base(white)
             {
-                this.type = PieceType.Queen;
+                type = PieceType.Queen;
             }
 
             override
-            public bool legalMove(Board board, Spot start, Spot end)
+            public bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board)
             {
                 //gets the starting and ending point for the queens move
                 int startRow = start.Row;
@@ -548,7 +549,7 @@ namespace ChessGame
                 int endColumn = end.Column;
 
                 //checks that the piece on the ending square is not of the same color as the moving piece
-                if (end.Piece != null && end.Piece.isWhite() == this.isWhite())
+                if (end.Piece != null && end.Piece.isWhite() == isWhite())
                 {
                     return false;
                 }
@@ -559,9 +560,9 @@ namespace ChessGame
                     return false;
                 }
 
-                if (board.IsKingInCheck(this.isWhite()))
+                if (threatMap.IsKingInCheck(isWhite()))
                 {
-                    if (board.willMovePutKingInCheck(start, end, this.isWhite()))
+                    if (threatMap.willMovePutKingInCheck(start, end, isWhite()))
                     {
                         return false;
                     }

@@ -2,14 +2,15 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ChessGame"
+        xmlns:local1="clr-namespace:ChessGame.Helpers"
         Title="Chess Game"
         SizeToContent="WidthAndHeight"
         Background="Black">
 
     <Window.Resources>
-        <local:PositionConverter x:Key="PositionConverter"/>
-        <local:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
-        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <local1:PositionConverter x:Key="PositionConverter"/>
+        <local1:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
+        <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
     </Window.Resources>
 
     <Grid>

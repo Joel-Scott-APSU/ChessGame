@@ -28,8 +28,8 @@ namespace MovesTests
             whitePlayer = new Player(true, gameRules);
             blackPlayer = new Player(false, gameRules);
             board = new Board(whitePlayer, blackPlayer, game);
-            moves = new Moves(whitePlayer, blackPlayer, gameRules);
             threatMap = new ThreatMap(whitePlayer, blackPlayer, game);
+            moves = new Moves(whitePlayer, blackPlayer, gameRules, threatMap);
             activePieces = new HashSet<Piece>();
         }
         [TestMethod]
@@ -297,7 +297,7 @@ namespace MovesTests
             // Move white pawn two squares forward (this should set it up for en passant)
             Spot startSpot = board.GetSpot(6, 4);
             Spot endSpot = board.GetSpot(4, 4); // Moving to row 4 from row 6
-            whitePawn.legalMove(threatMap, startSpot, endSpot);
+            whitePawn.legalMove(threatMap, startSpot, endSpot, board);
 
             // Check that the white pawn is set for en passant
             Assert.IsTrue(whitePawn.isEnPassant, "White pawn should be marked for en passant after moving two squares forward.");
@@ -305,12 +305,12 @@ namespace MovesTests
             // Move black pawn next to white pawn
             Spot blackStartSpot = board.GetSpot(1, 5);
             Spot blackEndSpot = board.GetSpot(2, 5); // Moving to row 2 from row 1
-            blackPawn.legalMove(threatMap, blackStartSpot, blackEndSpot);
+            blackPawn.legalMove(threatMap, blackStartSpot, blackEndSpot, board);
 
             // Now try en passant move
             Spot enPassantSpot = board.GetSpot(4, 5); // The spot where the white pawn will be captured en passant
             Spot captureSpot = board.GetSpot(5, 4); // The destination spot for the black pawn capturing en passant
-            bool moveResult = blackPawn.legalMove(threatMap, blackEndSpot, captureSpot);
+            bool moveResult = blackPawn.legalMove(threatMap, blackEndSpot, captureSpot, board);
 
             // Check that the black pawn can capture the white pawn en passant
             Assert.IsTrue(moveResult, "Black pawn should be able to capture white pawn en passant.");
