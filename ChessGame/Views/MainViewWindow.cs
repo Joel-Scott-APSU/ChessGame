@@ -20,6 +20,7 @@ namespace ChessGame.Views
 
         public ObservableCollection<ChessBoardSquare> ChessBoardSquares { get; set; }
 
+        public ICommand SquareClickedCommand { get; }
         public ICommand PromoteCommand { get; }
         private ChessBoardSquare selectedSquare;
         private Board board => game.board;
@@ -37,6 +38,22 @@ namespace ChessGame.Views
                 {
                     _isPromotionVisible = value;
                     OnPropertyChanged(nameof(IsPromotionVisible));
+                }
+            }
+        }
+
+        private bool _isInputLocked;
+        public bool IsInputLocked
+        {
+            get => _isInputLocked;
+            set
+            {
+
+                if (_isInputLocked != value)
+                {
+                    _isInputLocked = value;
+                    OnPropertyChanged(nameof(IsInputLocked));
+                    (SquareClickedCommand as RelayCommand)?.RaiseCanExecuteChanged(); // Update command state when input lock changes
                 }
             }
         }
@@ -70,6 +87,14 @@ namespace ChessGame.Views
                     }
                 }
             });
+
+            SquareClickedCommand = new RelayCommand(param =>
+            {
+                if (param is ChessBoardSquare square)
+                    OnSquareSelected(square);
+                },
+                param => !IsInputLocked
+            );
         }
 
         private void InitializeChessBoard()
@@ -186,27 +211,34 @@ namespace ChessGame.Views
 
                     if (moveSuccessful)
                     {
-                        if (square.piece is Piece.Pawn pawn)
+                        Spot promotionSpot = board.GetSpot(square.row, square.column);
+                        Debug.WriteLine($"Piece in UI update {promotionSpot.Piece} Promotion Spot: {promotionSpot}");
+                        if (promotionSpot.Piece is Piece.Pawn pawn)
                         {
                             bool promotionRow = (pawn.isWhite() && square.row == 0) || (!pawn.isWhite() && square.row == 7);
                             if (promotionRow)
                             {
-                                Spot promotionSpot = board.GetSpot(square.row, square.column);
                                 _promotionIsWhite = pawn.isWhite();  // Store color for promotion
                                 IsPromotionVisible = true;
+                                IsInputLocked = true;
 
                                 // Set the PromotionCallback for command to call later
                                 PromotionCallback = (promotedPiece) =>
                                 {
                                     game.gameRules.PromotePawn(promotedPiece.type.ToString(), pawn, promotionSpot);
-                                    square.PieceImage = GetPieceImage(promotionSpot.Piece);
+                                    Debug.WriteLine($"Promotion Spot Piece: {promotionSpot.Piece}");
+                                    Spot promotion = board.GetSpot(square.row, square.column);
+                                    square.PieceImage = GetPieceImage(promotion.Piece);
 
                                     OnPropertyChanged(nameof(ChessBoardSquares));
                                     IsPromotionVisible = false;
+                                    IsInputLocked = false;  // Unlock input after promotion
                                 };
                             }
+                            
                         }
-                        else if (enPassantCapture)
+
+                        if (enPassantCapture)
                         {
                             Debug.WriteLine("En Passant Capture is occurring in the UI");
                             MovePieceEnPassant(selectedSquare, square);
@@ -221,6 +253,7 @@ namespace ChessGame.Views
                         }
                         else
                         {
+                            Debug.WriteLine("Testing");
                             MovePiece(selectedSquare, square);
                         }
                     }
