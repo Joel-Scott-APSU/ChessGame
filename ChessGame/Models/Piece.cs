@@ -38,7 +38,20 @@ namespace ChessGame.Models
 
         public Spot getCurrentPosition() { return currentPosition; }
 
-        public void setCurrentPosition(Spot position) { currentPosition = position; }
+        public void setCurrentPosition(Spot position)
+        {
+            if (currentPosition != null)
+            {
+                currentPosition.Piece = null; // Clear the previous position
+            }
+
+            currentPosition = position;
+
+            if (position != null)
+            {
+                position.Piece = this; // Set the current piece to the new position
+            }
+        }
 
         public abstract bool legalMove(ThreatMap threatMap, Spot start, Spot end, Board board);
 
@@ -493,13 +506,6 @@ namespace ChessGame.Models
                 int RowMovementDirection = Math.Sign(endRow - startRow);
                 int ColumnMovementDirection = Math.Sign(endColumn - startColumn);
 
-                Debug.WriteLine("RowMovementDirection: " + RowMovementDirection);
-                Debug.WriteLine("ColumnMovementDirection: " + ColumnMovementDirection);
-
-                //verifies that the piece moves rows and columns 
-
-                Debug.WriteLine("RowDifference: " + Math.Abs(endRow - startRow));
-                Debug.WriteLine("ColumnDifference: " + Math.Abs(endColumn - startColumn));
                 if (Math.Abs(endRow - startRow) != Math.Abs(endColumn - startColumn))
                 {
                     return false;

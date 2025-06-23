@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Documents;
 using System.Windows.Input;
+using static ChessGame.Models.Piece;
 
 namespace ChessGame.Core
 {
@@ -18,7 +19,7 @@ namespace ChessGame.Core
         private static GameRules? instance;
         private Game game;
         private HashSet<Piece> activePieces;
-        MainWindowViewModel viewModel;
+        private MainWindowViewModel viewModel;
         private ThreatMap threatMap => game.threatMap;
         private Board board => game.board;
 
@@ -36,6 +37,12 @@ namespace ChessGame.Core
                 instance = new GameRules(game, viewModel);
             }
             return instance;
+        }
+
+        public static void ResetInstance()
+        {
+
+            instance = null;
         }
 
         internal static GameRules Create(Game game, MainWindowViewModel viewModel)
@@ -57,7 +64,7 @@ namespace ChessGame.Core
         {
             activePieces = new HashSet<Piece>();
         }
-        public (bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide) HandleMove(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
+        public async Task<(bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide)> HandleMove(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
         {
             Board board = game.board;
             Player currentTurn = game.currentTurn;
@@ -65,6 +72,7 @@ namespace ChessGame.Core
             Spot start = board.GetSpot(fromSquare.row, fromSquare.column);
             Spot end = board.GetSpot(toSquare.row, toSquare.column);
             Piece? movingPiece = start?.Piece;
+            Piece? capturedPiece = null;
 
             Debug.WriteLine($"Start: {start} End: {end} Moving Piece: {movingPiece} Current Turn: {currentTurn.IsWhite}");
 
@@ -85,9 +93,8 @@ namespace ChessGame.Core
             bool castledQueenSide = false;
 
             if (movingPiece.legalMove(threatMap, start, end, board))
-            {
-                Debug.WriteLine($"Legal move for {movingPiece}");
-                Piece? capturedPiece = end.Piece;
+            {;
+                capturedPiece = end.Piece;
 
 
                 if (movingPiece is Piece.Pawn && enPassantCapture(movingPiece, toSquare, board, out Piece? enPassantCapturedPiece))
@@ -109,23 +116,39 @@ namespace ChessGame.Core
             }
             else if (movingPiece is Piece.King king && end.Piece is Piece.Rook)
             {
-                if (toSquare.column == 7 && PerformCastling(king, toSquare, true, board))
+                castledKingSide = await PerformCastling(king, toSquare, true, board);
+                castledQueenSide = await PerformCastling(king, toSquare, false, board);
+                if (toSquare.column == 7 && castledKingSide)
                 {
+                    Debug.WriteLine("Castled king side");
                     moveSuccessful = true;
-                    castledKingSide = true;
                 }
-                else if (toSquare.column == 0 && PerformCastling(king, toSquare, false, board))
+
+                else if (toSquare.column == 0 && castledQueenSide)
                 {
+                    Debug.WriteLine("Castled queen side");
                     moveSuccessful = true;
-                    castledQueenSide = true;
                 }
             }
 
-            Debug.WriteLine($"Move Successful: {moveSuccessful}");
             if (moveSuccessful)
             {
-                PiecePositions(GetActivePieces(currentTurn.IsWhite));
                 swapTurn();
+
+                if (castledKingSide)
+                {
+                    string kingsideCastle = "O-O";
+                    viewModel.MoveLog.Add(kingsideCastle);
+                }
+                else if (castledQueenSide)
+                {
+                    string queensideCastle = "O-O-O";
+                    viewModel.MoveLog.Add(queensideCastle);
+                }
+                else
+                {
+                    WriteMoveOutput(movingPiece, currentTurn, fromSquare, toSquare, capturedPiece);
+                }
             }
 
             return (moveSuccessful, enPassantCaptureOccurred, castledKingSide, castledQueenSide);
@@ -144,7 +167,8 @@ namespace ChessGame.Core
 
                 if (enPassantPiece is Piece.Pawn enPassantPawn && enPassantPawn.isEnPassant && enPassantPawn.isWhite() != pawn.isWhite())
                 {
-                    enPassantCapturedPiece = enPassantPiece;
+                    CapturePiece(enPassantPawn);
+                    enPassantSpot.Piece = null;
                     return true;
                 }
             }
@@ -152,41 +176,46 @@ namespace ChessGame.Core
             return false;
         }
 
-        private bool PerformCastling(Piece.King king, ChessBoardSquare fromSquare, bool isKingside, Board board)
+        private async Task<bool> PerformCastling(Piece.King king, ChessBoardSquare fromSquare, bool isKingside, Board board)
         {
             // Verify if castling conditions are satisfied
-            if (isKingside && king.canCastleKingside(king.isWhite(), threatMap, board) ||
-                !isKingside && king.canCastleQueenside(king.isWhite(), threatMap, board))
+            if ((isKingside && king.canCastleKingside(king.isWhite(), threatMap, board) && king.hasMoved == false) ||
+                (!isKingside && king.canCastleQueenside(king.isWhite(), threatMap, board) && king.hasMoved == false))
             {
-                // Define columns for the rook and king's movements
-                int rookColumn = isKingside ? 7 : 0; // Rook's starting column
-                int kingTargetColumn = isKingside ? 6 : 2; // King's target column after castling
-                int rookTargetColumn = isKingside ? 5 : 3; // Rook's target column after castling
-
-                // Get spots for king, rook, and their target positions
-                Spot kingOriginalSpot = board.GetSpot(fromSquare.row, fromSquare.column);
-                Spot rookSpot = board.GetSpot(fromSquare.row, rookColumn);
-                Spot kingTarGetSpot = board.GetSpot(fromSquare.row, kingTargetColumn);
-                Spot rookTarGetSpot = board.GetSpot(fromSquare.row, rookTargetColumn);
-
-                Debug.WriteLine($"king Target Spot {kingTarGetSpot} Rook Target Spot {rookTarGetSpot}");
-                // Move the king to its target position
-                kingTarGetSpot.Piece = king;
-                kingOriginalSpot.Piece = null; // Clear king's original spot
-
-                // Move the rook to its target position
-                if (rookSpot.Piece is Piece.Rook castlingRook)
+                try
                 {
-                    Debug.WriteLine("Piece is Rook");
-                    rookTarGetSpot.Piece = castlingRook; // Assign rook to target spot
-                    rookSpot.Piece = null;              // Clear rook's original spot
-                    castlingRook.hasMoved = true;       // Mark rook as having moved
+                    // Define columns for the rook and king's movements
+                    int rookColumn = isKingside ? 7 : 0; // Rook's starting column
+                    int kingTargetColumn = isKingside ? 6 : 2; // King's target column after castling
+                    int rookTargetColumn = isKingside ? 5 : 3; // Rook's target column after castling
+
+                    // Get spots for king, rook, and their target positions
+                    Spot kingOriginalSpot = board.GetSpot(fromSquare.row, fromSquare.column);
+                    Spot rookSpot = board.GetSpot(fromSquare.row, rookColumn);
+                    Spot kingTargetSpot = board.GetSpot(fromSquare.row, kingTargetColumn);
+                    Spot rookTargetSpot = board.GetSpot(fromSquare.row, rookTargetColumn);
+
+                    
+                    if (rookSpot.Piece is Piece.Rook rook && rook.hasMoved == false)
+                    {
+                        // Move the king to its target position
+                        king.setCurrentPosition(kingTargetSpot);
+
+                        rook.setCurrentPosition(rookTargetSpot);
+
+
+                        //mark the rook has having moved 
+                        rook.hasMoved = true;
+                        // Mark the king as having moved
+                        king.hasMoved = true;
+
+                        return true; // Castling successful
+                    }
                 }
-
-                // Mark the king as having moved
-                king.hasMoved = true;
-
-                return true; // Castling successful
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error during castling: {ex.Message}");
+                }
             }
 
             return false; // Castling conditions not met
@@ -202,12 +231,12 @@ namespace ChessGame.Core
             currentTurn.ProcessPawns(pawn => pawn.isEnPassant = false);
 
             // Set the new current turn
-            Debug.WriteLine($"Swapping turn. Current turn before swap: {(game.currentTurn.IsWhite ? "White" : "Black")}");
             game.SetCurrentTurn(currentTurn);
-            Debug.WriteLine(currentTurn);
 
             // Update the threat map for the current turn
             game.threatMap.UpdateThreatMap(GetActivePieces(!game.currentTurn.IsWhite));
+
+            viewModel.UpdateTurnDisplay(game.currentTurn);
         }
 
 
@@ -257,12 +286,8 @@ namespace ChessGame.Core
             int row2 = position2.Row;
             int col2 = position2.Column;
 
-            Debug.WriteLine($"Bishop 1 Position: ({row1}, {col1}) Bishop 2 Position: ({row2}, {col2})");
-
             bool? color1 = GetSquareColor(row1, col1);
             bool? color2 = GetSquareColor(row2, col2);
-
-            Debug.WriteLine($"Color 1: {color1} Color 2: {color2}");
 
             return color1.HasValue && color2.HasValue && color1.Value == color2.Value;
         }
@@ -299,11 +324,11 @@ namespace ChessGame.Core
             return false;
         }
 
-        public bool Checkmate(Board board)
+        public bool Checkmate(Player player)
         {
-            bool canMove = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(game.currentTurn.IsWhite));
+            bool canMove = game.moves.checkForLegalMoves(game.currentTurn, game.board, GetActivePieces(!player.IsWhite));
 
-            if (!canMove && threatMap.IsKingInCheck(game.currentTurn.IsWhite))
+            if (!canMove && threatMap.IsKingInCheck(!player.IsWhite))
             {
                 Debug.WriteLine("Checkmate! Game Over.");
                 return true;
@@ -323,7 +348,7 @@ namespace ChessGame.Core
 
         public void promotions(Piece piece, Spot promotionSpot, string PromotionType)
         {
-            if(piece is Piece.Pawn pawn)
+            if (piece is Piece.Pawn pawn)
             {
                 int row = pawn.getCurrentPosition().Row;
                 bool isPromotionRow = (pawn.isWhite() && row == 0) || (!pawn.isWhite() && row == 7);
@@ -352,6 +377,198 @@ namespace ChessGame.Core
             CapturePiece(pawn); // Remove the pawn from active pieces
 
             board.CreatePieces(promotedPiece, promotionSpot.Row, promotionSpot.Column, currentPlayer);
+        }
+
+        private string ToAlgebraic(int row, int col)
+        {
+            char file = (char)('a' + col);
+            int rank = 8 - row; // Convert to chess notation (1-8)
+            return $"{file}{rank}"; // Return in algebraic notation format
+        }
+
+        private string GetMoveNotation(Piece movingPiece, ChessBoardSquare fromSquare, ChessBoardSquare toSquare, bool isCapture)
+        {
+            string toAlgebraic = ToAlgebraic(toSquare.row, toSquare.column);
+            string pieceLetter = movingPiece is Piece.Pawn ? "" : GetPieceNotationSymbol(movingPiece);
+            string disambiguation = "";
+
+            if (!(movingPiece is Piece.Pawn || movingPiece is Piece.King))
+            {
+                // Try to find another same-type piece that could have also moved to the square
+                string otherFrom = GetDisambiguationSquare(movingPiece, toSquare);
+                if (otherFrom != null)
+                {
+                    // Disambiguation rules: If pieces differ by file, include file; otherwise include rank
+                    if (otherFrom[0] != ToAlgebraic(fromSquare.row, fromSquare.column)[0]) // different file
+                    {
+                        disambiguation = $"{(char)('a' + fromSquare.column)}";
+                    }
+                    else // same file, so disambiguate by rank
+                    {
+                        disambiguation = $"{8 - fromSquare.row}";
+                    }
+                }
+            }
+
+            if (movingPiece is Piece.Pawn && isCapture)
+            {
+                char fromFile = (char)('a' + fromSquare.column);
+                return $"{fromFile}x{toAlgebraic}";
+            }
+
+            if (isCapture)
+                return $"{pieceLetter}{disambiguation}x{toAlgebraic}";
+
+            return $"{pieceLetter}{disambiguation}{toAlgebraic}";
+        }
+
+
+        public string GetPieceNotationSymbol(Piece piece)
+        {
+            if (piece == null) return "";
+
+            return piece.type switch
+            {
+                Piece.PieceType.King => "K",
+                Piece.PieceType.Queen => "Q",
+                Piece.PieceType.Rook => "R",
+                Piece.PieceType.Bishop => "B",
+                Piece.PieceType.Knight => "N",
+                Piece.PieceType.Pawn => "",  // Pawns have no symbol
+                _ => ""
+            };
+        }
+
+        public void WriteMoveOutput(Piece movingPiece, Player currentTurn, ChessBoardSquare fromSquare, ChessBoardSquare toSquare, Piece capturedPiece)
+        {
+            bool kingInCheck = threatMap.IsKingInCheck(!movingPiece.isWhite());
+            bool checkmate = Checkmate(currentTurn);
+            string annotation = checkmate ? "#" : (kingInCheck ? "+" : "");
+            string moveNotation = $"{GetMoveNotation(movingPiece, fromSquare, toSquare, capturedPiece != null)}{annotation}";
+            viewModel.MoveLog.Add(moveNotation);
+        }
+
+        private string GetDisambiguationSquare(Piece piece, ChessBoardSquare toSquare)
+        {
+            foreach (var otherPiece in GetActivePieces(piece.isWhite()))
+            {
+                // Skip the original moving piece
+                if (otherPiece == piece || otherPiece.type != piece.type)
+                    continue;
+
+                switch (piece.type)
+                {
+                    case Piece.PieceType.Knight:
+                        if (KnightCanReach(otherPiece, toSquare))
+                            return ToAlgebraic(otherPiece.getCurrentPosition().Row, otherPiece.getCurrentPosition().Column);
+                        break;
+
+                    case Piece.PieceType.Bishop:
+                        if (BishopCanReach(otherPiece, toSquare))
+                            return ToAlgebraic(otherPiece.getCurrentPosition().Row, otherPiece.getCurrentPosition().Column);
+                        break;
+
+                    case Piece.PieceType.Rook:
+                        if (RookCanReach(otherPiece, toSquare))
+                            return ToAlgebraic(otherPiece.getCurrentPosition().Row, otherPiece.getCurrentPosition().Column);
+                        break;
+
+                    case Piece.PieceType.Queen:
+                        if (QueenCanReach(otherPiece, toSquare))
+                            return ToAlgebraic(otherPiece.getCurrentPosition().Row, otherPiece.getCurrentPosition().Column);
+                        break;
+                }
+            }
+
+            return null; // No other same-type piece can reach the destination
+        }
+
+
+        private bool KnightCanReach(Piece piece, ChessBoardSquare toSquare)
+        {
+
+            Spot spot = piece.getCurrentPosition();
+            int startRow = spot.Row;
+            int startCol = spot.Column;
+            int endRow = toSquare.row;
+            int endCol = toSquare.column;
+
+            if(Math.Abs(startRow - endRow) == 2 && Math.Abs(startCol - endCol) == 1 ||
+               Math.Abs(startRow - endRow) == 1 && Math.Abs(startCol - endCol) == 2)
+            {
+                return true; // Knight can reach the square
+            }
+            return false;
+        }
+
+        private bool BishopCanReach(Piece piece, ChessBoardSquare toSquare)
+        {
+            Spot spot = piece.getCurrentPosition();
+            int startRow = spot.Row;
+            int startCol = spot.Column;
+            int endRow = toSquare.row;
+            int endCol = toSquare.column;
+
+            if(Math.Abs(startRow - endRow) != Math.Abs(startCol - endCol))
+                return false; // Bishop must move diagonally
+
+            int rowStep = Math.Sign(endRow - startRow);
+            int colStep = Math.Sign(endCol - startCol);
+
+            for (int i = 1; i < Math.Abs(startRow - endRow); i++)
+            {
+                int row = startRow + i * rowStep;
+                int col = startCol + i * colStep;
+                if (board.GetSpot(row, col).Piece != null)
+                    return false; // There is a piece blocking the path
+            }
+
+            return true;
+        }
+
+        private bool RookCanReach(Piece piece, ChessBoardSquare toSquare)
+        {
+            Spot spot = piece.getCurrentPosition();
+            int startRow = spot.Row;
+            int startCol = spot.Column;
+            int endRow = toSquare.row;
+            int endCol = toSquare.column;
+
+            // Rook must move in a straight line
+            if (startRow != endRow && startCol != endCol)
+                return false;
+
+            if (startRow == endRow)
+            {
+                // Horizontal move
+                int step = endCol > startCol ? 1 : -1;
+                for (int col = startCol + step; col != endCol; col += step)
+                {
+                    if (board.GetSpot(startRow, col).Piece != null)
+                        return false;
+                }
+                return true;
+            }
+
+            if (startCol == endCol)
+            {
+                // Vertical move
+                int step = endRow > startRow ? 1 : -1;
+                for (int row = startRow + step; row != endRow; row += step)
+                {
+                    if (board.GetSpot(row, startCol).Piece != null)
+                        return false;
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private bool QueenCanReach(Piece piece, ChessBoardSquare toSquare)
+        {
+            return BishopCanReach(piece, toSquare) || RookCanReach(piece, toSquare);
         }
     }
 }

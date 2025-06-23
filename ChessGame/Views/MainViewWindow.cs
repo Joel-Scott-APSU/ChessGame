@@ -11,6 +11,7 @@ using System.Windows.Shapes;
 using ChessGame.Models;
 using ChessGame.Commands;
 using System.Windows.Controls;
+using static ChessGame.Models.Piece;
 
 namespace ChessGame.Views
 {
@@ -28,6 +29,20 @@ namespace ChessGame.Views
 
         public Action<Piece> PromotionCallback { get; set; } // Callback for promotion selection
 
+        private Brush _currentTurnColor;
+
+        public Brush CurrentTurnColor
+        {
+            get => _currentTurnColor;
+
+            set
+            {
+                _currentTurnColor = value;
+                OnPropertyChanged(nameof(CurrentTurnColor));
+            }
+        }
+
+
         private bool _isPromotionVisible = false;
         public bool IsPromotionVisible
         {
@@ -42,21 +57,8 @@ namespace ChessGame.Views
             }
         }
 
-        private bool _isInputLocked;
-        public bool IsInputLocked
-        {
-            get => _isInputLocked;
-            set
-            {
-
-                if (_isInputLocked != value)
-                {
-                    _isInputLocked = value;
-                    OnPropertyChanged(nameof(IsInputLocked));
-                    (SquareClickedCommand as RelayCommand)?.RaiseCanExecuteChanged(); // Update command state when input lock changes
-                }
-            }
-        }
+        public ObservableCollection<string> MoveLog { get; } = new ObservableCollection<string>();
+        public string CurrentTurnText;
 
         private bool _promotionIsWhite; // Store promotion color
 
@@ -87,14 +89,6 @@ namespace ChessGame.Views
                     }
                 }
             });
-
-            SquareClickedCommand = new RelayCommand(param =>
-            {
-                if (param is ChessBoardSquare square)
-                    OnSquareSelected(square);
-                },
-                param => !IsInputLocked
-            );
         }
 
         private void InitializeChessBoard()
@@ -193,7 +187,7 @@ namespace ChessGame.Views
             }
         }
 
-        public void OnSquareSelected(ChessBoardSquare square)
+        public async Task OnSquareSelectedAsync(ChessBoardSquare square)
         {
             if (selectedSquare == null)
             {
@@ -207,7 +201,7 @@ namespace ChessGame.Views
             {
                 if (!square.IsHighlighted)
                 {
-                    (bool moveSuccessful, bool enPassantCapture, bool CastleKingSide, bool CastleQueenSide) = game.movePiece(selectedSquare, square);
+                    (bool moveSuccessful, bool enPassantCapture, bool CastleKingSide, bool CastleQueenSide) = await game.movePiece(selectedSquare, square);
 
                     if (moveSuccessful)
                     {
@@ -218,43 +212,30 @@ namespace ChessGame.Views
                             bool promotionRow = (pawn.isWhite() && square.row == 0) || (!pawn.isWhite() && square.row == 7);
                             if (promotionRow)
                             {
-                                _promotionIsWhite = pawn.isWhite();  // Store color for promotion
-                                IsPromotionVisible = true;
-                                IsInputLocked = true;
-
-                                // Set the PromotionCallback for command to call later
-                                PromotionCallback = (promotedPiece) =>
-                                {
-                                    game.gameRules.PromotePawn(promotedPiece.type.ToString(), pawn, promotionSpot);
-                                    Debug.WriteLine($"Promotion Spot Piece: {promotionSpot.Piece}");
-                                    Spot promotion = board.GetSpot(square.row, square.column);
-                                    square.PieceImage = GetPieceImage(promotion.Piece);
-
-                                    OnPropertyChanged(nameof(ChessBoardSquares));
-                                    IsPromotionVisible = false;
-                                    IsInputLocked = false;  // Unlock input after promotion
-                                };
+                                await UpdateUIForPromotion(promotionSpot, pawn, square);
+                                OnPropertyChanged(nameof(CurrentTurnText));
                             }
-                            
                         }
 
                         if (enPassantCapture)
                         {
-                            Debug.WriteLine("En Passant Capture is occurring in the UI");
                             MovePieceEnPassant(selectedSquare, square);
+                            OnPropertyChanged(nameof(CurrentTurnText));
                         }
                         else if (CastleKingSide)
                         {
                             MovePiecesCastleKingside(selectedSquare, square);
+                            OnPropertyChanged(nameof(CurrentTurnText));
                         }
                         else if (CastleQueenSide)
                         {
                             MovePiecesCastleQueenside(selectedSquare, square);
+                            OnPropertyChanged(nameof(CurrentTurnText));
                         }
                         else
                         {
-                            Debug.WriteLine("Testing");
                             MovePiece(selectedSquare, square);
+                            OnPropertyChanged(nameof(CurrentTurnText));
                         }
                     }
                 }
@@ -322,6 +303,31 @@ namespace ChessGame.Views
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        private async Task UpdateUIForPromotion(Spot promotionSpot, Piece.Pawn pawn, ChessBoardSquare square)
+        {
+            _promotionIsWhite = pawn.isWhite();  // Store color for promotion
+            IsPromotionVisible = true;
+
+            // Set the PromotionCallback for command to call later
+            PromotionCallback = (promotedPiece) =>
+            {
+                game.gameRules.PromotePawn(promotedPiece.type.ToString(), pawn, promotionSpot);
+                Debug.WriteLine($"Promotion Spot Piece: {promotionSpot.Piece}");
+                Spot promotion = board.GetSpot(square.row, square.column);
+                square.PieceImage = GetPieceImage(promotion.Piece);
+
+                OnPropertyChanged(nameof(ChessBoardSquares));
+                IsPromotionVisible = false;
+                // Input unlocked in PromoteCommand after promotion selection
+            };
+        }
+
+        public void UpdateTurnDisplay(Player currentTurn)
+        {
+            CurrentTurnText = currentTurn.IsWhite ? "White's Turn" : "Black's Turn";
+            CurrentTurnColor = currentTurn.IsWhite ? Brushes.Red : Brushes.Yellow;
         }
     }
 }

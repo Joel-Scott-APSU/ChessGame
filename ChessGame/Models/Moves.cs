@@ -214,8 +214,53 @@ namespace ChessGame.Models
                 }
             }
 
+            if (PawnEnPassantCheck(player, start, board, pawn, threat))
+                return true;
+
+        return false;
+        }
+
+        private bool PawnEnPassantCheck(Player player, Spot start, Board board, Piece pawn, ThreatMap threat)
+        {
+            int row = start.Row;
+            int col = start.Column;
+            int direction = player.IsWhite ? -1 : 1;
+
+            // Check both adjacent squares (left and right)
+            for (int colOffset = -1; colOffset <= 1; colOffset += 2)
+            {
+                int adjacentCol = col + colOffset;
+
+                if (adjacentCol < 0 || adjacentCol >= 8)
+                    continue;
+
+                Spot adjacentSpot = board.GetSpot(row, adjacentCol);
+                Piece adjacentPiece = adjacentSpot?.Piece;
+
+                // Step 1: Is the adjacent piece an enemy pawn with enPassant flag set?
+                if (adjacentPiece is Pawn enemyPawn && enemyPawn.isWhite() != pawn.isWhite() && enemyPawn.isEnPassant)
+                {
+                    // Step 2: Get the diagonal destination of the en passant capture
+                    Spot endSpot = board.GetSpot(row + direction, adjacentCol);
+
+                    // Step 3: Simulate capture by temporarily removing the adjacent pawn
+                    adjacentSpot.Piece = null;
+
+                    // Use your simulating check function to see if king is still in check
+                    bool kingStillInCheck = !threat.willMovePutKingInCheck(start, endSpot, player.IsWhite);
+
+                    // Step 4: Restore board state
+                    adjacentSpot.Piece = enemyPawn;
+
+                    // If king is not in check after this move, return true
+                    if (!kingStillInCheck)
+                        return true;
+                }
+            }
+
             return false;
         }
+
 
 
         private bool checkKnightMoves(Player player, Spot start, Board board, ThreatMap threat)
@@ -241,8 +286,8 @@ namespace ChessGame.Models
                         // Simulate the move and check if it puts the king in check
                         if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
                         {
-                            // Check if the king is in check after the move (important!)
-                            bool kingInCheck = threat.IsKingInCheck(player.IsWhite);
+                            // Check if the king is in check after the move
+                            bool kingInCheck = threat.IsKingInCheck(!player.IsWhite);
 
                             // If the king is not in check, it's a valid move
                             if (!kingInCheck)
@@ -287,7 +332,7 @@ namespace ChessGame.Models
                 if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
                 {
                     // Check if the king is in check after the simulated move (important!)
-                    bool kingInCheck = threat.IsKingInCheck(player.IsWhite);
+                    bool kingInCheck = threat.IsKingInCheck(!player.IsWhite);
                     if (!kingInCheck)
                     {
                         return true;  // The move is legal, as it doesn't put the king in check
@@ -341,6 +386,8 @@ namespace ChessGame.Models
             if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
             {
                 Debug.WriteLine("King can legally move to: " + moveSpot);
+                Debug.WriteLine($"Is king in check: {threat.IsKingInCheck(!player.IsWhite)}");
+                Debug.WriteLine($"Is Square under threat: {threat.IsSquareUnderThreat(player.IsWhite, moveSpot.Row, moveSpot.Column)}");
                 return true;
             }
 

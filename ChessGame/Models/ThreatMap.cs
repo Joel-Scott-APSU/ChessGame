@@ -34,23 +34,26 @@ namespace ChessGame.Models
                 return false;
 
             Piece capturedPiece = end.Piece;
-            Spot originalPosition = movingPiece.getCurrentPosition();
+            Spot originalSpot = movingPiece.getCurrentPosition();
 
             // Simulate move
-            start.Piece = null;
-            end.Piece = movingPiece;
-            gameRules.CapturePiece(capturedPiece); //remove captured piece from active pieces
-
             movingPiece.setCurrentPosition(end);
+            gameRules.CapturePiece(capturedPiece); // Remove captured piece from active pieces
+
             bool kingInCheck = IsKingInCheck(isWhite);
 
             // Undo move
-            start.Piece = movingPiece;
-            end.Piece = capturedPiece;
-            movingPiece.setCurrentPosition(originalPosition);
-            gameRules.AddActivePiece(capturedPiece); // Restore captured piece to active pieces
+            movingPiece.setCurrentPosition(start);
+            end.Piece = capturedPiece; // Restore the captured piece on the spot
+            if (capturedPiece != null)
+            {
+                capturedPiece.setCurrentPosition(end);
+                gameRules.AddActivePiece(capturedPiece); // Restore captured piece to active pieces
+            }
+
             return kingInCheck;
         }
+
 
 
 
@@ -214,10 +217,9 @@ namespace ChessGame.Models
                 if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
                 {
                     Spot spot = board.GetSpot(newRow, newColumn);
-                    if (spot.Piece != null)
-                    {
+
                         threatMap[newRow, newColumn] = true;
-                    }
+          
                 }
             }
         }
@@ -312,15 +314,7 @@ namespace ChessGame.Models
         {
             Spot kingSpot = board.FindKing(isWhite);
 
-            Debug.WriteLine("isWhite: " + isWhite);
-
             UpdateThreatMap(game.gameRules.GetActivePieces(!isWhite));
-
-            IEnumerable<Piece> pieces = game.gameRules.GetActivePieces(isWhite);
-            foreach (Piece piece in pieces)
-            {
-                Debug.WriteLine("Checking piece: " + piece);
-            }
 
             return threatMap[kingSpot.Row, kingSpot.Column];
         }

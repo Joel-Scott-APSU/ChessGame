@@ -6,7 +6,7 @@ using System.Diagnostics;
 public class Game
 {
     private static Game _instance;
-    public Board board { get; private set; }
+    public Board board { get; set; }
     public Player whitePlayer { get; private set; }
     public Player blackPlayer { get; private set; }
     public Player currentTurn { get; private set; }
@@ -47,7 +47,7 @@ public class Game
         currentTurn = whitePlayer;
     }
 
-    public (bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide) movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
+    public Task<(bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide)> movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
     {
         return gameRules.HandleMove(fromSquare, toSquare);
     }
@@ -64,7 +64,7 @@ public class Game
             Debug.WriteLine("Game ended in a draw.");
         }
 
-        else if (gameRules.Checkmate(board))
+        else if (gameRules.Checkmate(currentTurn))
         {
             Debug.WriteLine($"{currentTurn.IsWhite} wins by checkmate.");
         }

@@ -32,7 +32,7 @@ namespace ChessGame
         {
             if (sender is Grid grid && grid.DataContext is ChessBoardSquare square)
             {
-                viewModel.OnSquareSelected(square);
+                viewModel.OnSquareSelectedAsync(square);
             }
         }
 
