@@ -3,28 +3,53 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:local="clr-namespace:ChessGame"
         xmlns:local1="clr-namespace:ChessGame.Helpers"
+        xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         Title="Chess Game"
         SizeToContent="WidthAndHeight"
-        Background="Black">
-
+        Background="#552F23">
+    
     <Window.Resources>
         <local1:PositionConverter x:Key="PositionConverter"/>
         <local1:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
         <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style TargetType="RadioButton" x:Key="GreenDotRadioButton">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <BulletDecorator Background="Transparent">
+                            <BulletDecorator.Bullet>
+                                <Grid Width="16" Height="16">
+                                    <Ellipse Stroke="White" StrokeThickness="2"/>
+                                    <Ellipse x:Name="InnerDot" Width="8" Height="8" Fill="Green" Visibility="Collapsed"/>
+                                </Grid>
+                            </BulletDecorator.Bullet>
+                            <ContentPresenter Margin="5,0,0,0"
+                                      VerticalAlignment="Center"
+                                      RecognizesAccessKey="True"/>
+                        </BulletDecorator>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="InnerDot" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
-    <Grid>
+    <!-- Center board + controls together -->
+    <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <!-- Chessboard Area -->
-            <ColumnDefinition Width="200"/>
-            <!-- Control Panel on Right -->
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="Auto"/>
         </Grid.ColumnDefinitions>
 
         <!-- Chessboard Area -->
         <Viewbox Grid.Column="0" Stretch="Uniform">
             <Grid Width="500" Height="500" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <!-- Outer Wood Background -->
                 <Grid.Background>
                     <ImageBrush ImageSource="pack://application:,,,/Textures/WoodTexture.jpg"
                                 TileMode="Tile" Viewport="0,0,25,25" ViewportUnits="Absolute" />
@@ -35,7 +60,6 @@
                         HorizontalAlignment="Center" VerticalAlignment="Center"
                         Width="380" Height="380" Margin="60"/>
 
-                <!-- Main grid with padding -->
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="60"/>
@@ -61,7 +85,7 @@
                     </StackPanel>
 
                     <!-- File Labels -->
-                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center" >
+                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <TextBlock Text="A" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
                         <TextBlock Text="B" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
                         <TextBlock Text="C" FontSize="16" FontWeight="Bold" Foreground="White" Width="47.5" TextAlignment="Center"/>
@@ -97,68 +121,78 @@
             </Grid>
         </Viewbox>
 
-        <!-- Right-side control panel -->
-        <!-- Wrapper Grid to stretch and center content -->
-        <Grid Grid.Column="1" Margin="10">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+        <!-- Control Panel -->
+        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10" Width="200">
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                <TextBlock Text="{Binding InvalidMoveMessage}" 
+           FontSize="20" FontWeight="Bold" Foreground="Yellow"
+           Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
 
-            <!-- Centered StackPanel in the middle row -->
-            <StackPanel Grid.Row="1"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                >
-                <TextBlock Text="{Binding CurrentTurnText}"
-                   FontSize="20"
-                   FontWeight="Bold"
-                   Foreground="{Binding CurrentTurnColor}"
-                   Margin="0,0,0,20"
-                   TextAlignment="Center"
-                   HorizontalAlignment="Center"/>
-
-                <Button Width="120" Height="45"
-                Content="Reset Game"
-                Click="ResetGame_Click"
-                Background="#DDDDDD"
-                FontWeight="Bold"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Opacity="0.9" />
-
-                <!-- Move Log with Scrollbar -->
-                <ListBox Grid.Row="1"
-         ItemsSource="{Binding MoveLog}"
-         Width="180"
-         Height="600"
-         Margin="0,0,0,10"
-         HorizontalAlignment="Center"
-         Background="Black"
-         Foreground="White"
-         BorderBrush="Gray"
-         BorderThickness="1"
-         ScrollViewer.VerticalScrollBarVisibility="Auto"
-         FontFamily="Segoe UI"
-         FontSize="25"
-         Padding="5" />
-
-
-                <!-- Promotion Buttons -->
-                <StackPanel Orientation="Vertical"
-                    Visibility="{Binding IsPromotionVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
-
-                    <TextBlock Text="Promote to:" FontSize="20" FontWeight="Bold" Foreground="White" Margin="0,10,0,5" TextAlignment="Center"/>
-
-                    <Button Content="Queen" Width="150" Height="50" FontSize="20" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Queen"/>
-                    <Button Content="Rook" Width="150" Height="50" FontSize="20" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Rook"/>
-                    <Button Content="Bishop" Width="150" Height="50" FontSize="20" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Bishop"/>
-                    <Button Content="Knight" Width="150" Height="50" FontSize="20" Margin="0,2" Command="{Binding PromoteCommand}" CommandParameter="Knight"/>
+                <!-- Turn Indicator -->
+                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10" Width="120">
+                    <RadioButton Content="White"
+                        IsChecked="{Binding IsWhiteTurn, Mode=OneWay}"
+                        VerticalContentAlignment="Center"
+                        HorizontalContentAlignment="Center"
+                        GroupName="PlayerTurn"
+                        FontWeight="Bold"
+                        FontSize="20"                 
+                        Foreground="White"
+                        Margin="5"
+                        IsEnabled="False"
+                        HorizontalAlignment="Center"/>
+                    <RadioButton Content="Black"
+                         IsChecked="{Binding IsBlackTurn, Mode=OneWay}"
+                         GroupName="PlayerTurn"
+                         VerticalContentAlignment="Center"
+                         HorizontalContentAlignment="Center"
+                         FontWeight="Bold"
+                         FontSize="20"
+                         Foreground="Black"
+                         Background="White"
+                         Margin="5"
+                         IsEnabled="False"
+                         HorizontalAlignment="Center"/>
                 </StackPanel>
+
+                <!-- Reset Button -->
+                <Button Width="120" Height="45"
+        Content="Reset Game"
+        Click="ResetGame_Click"
+        Background="#DDDDDD"
+        FontWeight="Bold"
+        HorizontalAlignment="Center"
+        Opacity="0.9"/>
+
+
+                <!-- Move Log (Most recent at top) -->
+                <ListBox ItemsSource="{Binding MoveLog}"
+                         Width="180" Height="600" Margin="0,10,0,10"
+                         HorizontalAlignment="Center"
+                         Background="Black" Foreground="White"
+                         BorderBrush="Gray" BorderThickness="1"
+                         ScrollViewer.VerticalScrollBarVisibility="Auto"
+                         FontFamily="Segoe UI" FontSize="25" Padding="5"/>
+
+                <!-- Promotion Options -->
+                <StackPanel Orientation="Vertical"
+                            Visibility="{Binding IsPromotionVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                            HorizontalAlignment="Center">
+
+                    <TextBlock Text="Promote to:" FontSize="20" FontWeight="Bold"
+                               Foreground="White" Margin="0,10,0,5" TextAlignment="Center"/>
+
+                    <Button Content="Queen" Width="150" Height="50" FontSize="20" Margin="0,2"
+                            Command="{Binding PromoteCommand}" CommandParameter="Queen"/>
+                    <Button Content="Rook" Width="150" Height="50" FontSize="20" Margin="0,2"
+                            Command="{Binding PromoteCommand}" CommandParameter="Rook"/>
+                    <Button Content="Bishop" Width="150" Height="50" FontSize="20" Margin="0,2"
+                            Command="{Binding PromoteCommand}" CommandParameter="Bishop"/>
+                    <Button Content="Knight" Width="150" Height="50" FontSize="20" Margin="0,2"
+                            Command="{Binding PromoteCommand}" CommandParameter="Knight"/>
+                </StackPanel>
+
             </StackPanel>
-        </Grid>
+        </Border>
     </Grid>
 </Window>

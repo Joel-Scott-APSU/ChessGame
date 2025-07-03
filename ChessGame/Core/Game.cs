@@ -1,4 +1,5 @@
-﻿using ChessGame.Core;
+﻿using Chess.Core;
+using ChessGame.Core;
 using ChessGame.Models;
 using ChessGame.Views;
 using System.Diagnostics;
@@ -41,13 +42,13 @@ public class Game
         blackPlayer = new Player(false, gameRules);
         board = new Board(whitePlayer, blackPlayer, this);
         threatMap = new ThreatMap(whitePlayer, blackPlayer, this);
-        moves = new Moves(whitePlayer, blackPlayer, gameRules, threatMap);
+        moves = new Moves(this);
         whitePlayer.clearCapturedPieces();
         blackPlayer.clearCapturedPieces();
         currentTurn = whitePlayer;
     }
 
-    public Task<(bool moveSuccessful, bool enPassantCaptureOccurred, bool CastledKingSide, bool CastledQueenSide)> movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
+    public Task<MoveResult> movePiece(ChessBoardSquare fromSquare, ChessBoardSquare toSquare)
     {
         return gameRules.HandleMove(fromSquare, toSquare);
     }
@@ -57,18 +58,22 @@ public class Game
         currentTurn = newTurn;
     }
 
-    public void EndGame()
+    public bool EndGame()
     {
         if (gameRules.Draw())
         {
             Debug.WriteLine("Game ended in a draw.");
+            return true;
         }
 
         else if (gameRules.Checkmate(currentTurn))
         {
-            Debug.WriteLine($"{currentTurn.IsWhite} wins by checkmate.");
+            string currentPlayer = currentTurn.IsWhite ? "Black" : "White";
+            Debug.WriteLine($"{currentPlayer} wins by checkmate.");
+            return true;
         }
 
+        return false;
     }
 
     public static void ResetInstance()

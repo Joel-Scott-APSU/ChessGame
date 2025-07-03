@@ -33,30 +33,39 @@ namespace ChessGame.Models
             if (movingPiece == null)
                 return false;
 
+            // Do not allow simulation if the move would capture the enemy king (invalid state)
+            if (movingPiece is Piece.King && threatMap[end.Row, end.Column])
+            {
+                Debug.WriteLine($"[DEBUG] King trying to move into threatened square at ({end.Row}, {end.Column})");
+                return true;
+            }
+
+            Debug.WriteLine("King Spot " + board.FindKing(game.currentTurn.IsWhite));
+            //Get piece positions for reset of original state 
             Piece capturedPiece = end.Piece;
             Spot originalSpot = movingPiece.getCurrentPosition();
 
             // Simulate move
+            start.Piece = null;
+            end.Piece = movingPiece;
             movingPiece.setCurrentPosition(end);
-            gameRules.CapturePiece(capturedPiece); // Remove captured piece from active pieces
+            gameRules.RemoveActivePiece(capturedPiece); // Temporarily remove captured piece from active list
 
             bool kingInCheck = IsKingInCheck(isWhite);
 
             // Undo move
-            movingPiece.setCurrentPosition(start);
-            end.Piece = capturedPiece; // Restore the captured piece on the spot
+            end.Piece = capturedPiece;
+            start.Piece = movingPiece;
+            movingPiece.setCurrentPosition(originalSpot);
+
             if (capturedPiece != null)
             {
                 capturedPiece.setCurrentPosition(end);
-                gameRules.AddActivePiece(capturedPiece); // Restore captured piece to active pieces
+                gameRules.AddActivePiece(capturedPiece); // Restore captured piece to active list
             }
 
             return kingInCheck;
         }
-
-
-
-
 
         public void UpdateThreatMap(IEnumerable<Piece> opponentPieces)
         {
@@ -86,34 +95,17 @@ namespace ChessGame.Models
                 return;
             }
 
-            try
+            Spot position = piece.getCurrentPosition();
+            if(position == null || position.Piece != piece)
             {
-                Spot position = null;
+                Debug.WriteLine($"[DEBUG] ThreatMap: Skipping piece {piece.type} – not on board or mismatch.");
+                return;
+            }
 
-                for (int i = 0; i < 8; i++)
-                {
-                    for (int j = 0; j < 8; j++)
-                    {
-                        Spot spot = board.GetSpot(i, j);
-                        if (spot.Piece == piece)
-                        {
-                            position = spot;
-                            break;
-                        }
-                    }
-                    if (position != null) break;
-                }
+            int row = position.Row;
+            int col = position.Column;
 
-                if (position == null)
-                {
-                    throw new InvalidOperationException($"Piece not found on the board: {piece}");
-                }
-
-
-                int row = position.Row;
-                int col = position.Column;
-
-                switch (piece.type)
+            switch (piece.type)
                 {
                     case Piece.PieceType.Pawn:
                         markPawnThreats(piece, row, col);
@@ -134,11 +126,6 @@ namespace ChessGame.Models
                         MarkKingThreats(piece, row, col);
                         break;
                 }
-            }
-            catch (InvalidOperationException e)
-            {
-                Debug.WriteLine($"{e}");
-            }
         }
 
         private void MarkKingThreats(Piece king, int row, int col)
@@ -149,14 +136,21 @@ namespace ChessGame.Models
             for (int i = 0; i < rows.Length; i++)
             {
                 int newRow = row + rows[i];
-                int newColumn = col + columns[i];
+                int newCol = col + columns[i];
 
-                if (newRow >= 0 && newRow < 8 && newColumn >= 0 && newColumn < 8)
+                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
                 {
-                    threatMap[newRow, newColumn] = true;
+                    Piece target = board.GetSpot(newRow, newCol).Piece;
+
+                    // Only mark if the square is empty or occupied by an opponent piece
+                    if (target == null || target.isWhite != king.isWhite)
+                    {
+                        threatMap[newRow, newCol] = true;
+                    }
                 }
             }
         }
+
 
         private void markPawnThreats(Piece pawn, int row, int col)
         {
@@ -192,7 +186,7 @@ namespace ChessGame.Models
         }
 
         private void markQueenThreats(Piece Queen, int row, int col)
-        {
+        {            
             foreach (Piece.Direction direction in Enum.GetValues(typeof(Piece.Direction)))
             {
                 MarkThreatsInDirectionStraight(Queen, row, col, direction);

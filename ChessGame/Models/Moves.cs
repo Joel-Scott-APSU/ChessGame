@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Diagnostics;
-using System.Windows.Input;
+using System.Linq;
 using ChessGame.Core;
 using static ChessGame.Models.Piece;
 
@@ -10,17 +9,12 @@ namespace ChessGame.Models
 {
     public class Moves
     {
-        private Player whitePlayer;
-        private Player blackPlayer;
-        private GameRules gameRules;
-        private ThreatMap threatMap;
+        private Game game;
+        private ThreatMap threatMap => game.threatMap;
 
-        public Moves(Player whitePlayer, Player blackPlayer, GameRules gameRules, ThreatMap threat)
+        public Moves(Game game)
         {
-            this.blackPlayer = blackPlayer;
-            this.whitePlayer = whitePlayer;
-            this.gameRules = gameRules;
-            threatMap = threat;
+            this.game = game;
         }
 
         public bool checkForLegalMoves(Player player, Board board, IEnumerable<Piece> pieces)
@@ -28,61 +22,43 @@ namespace ChessGame.Models
             try
             {
                 var bishopDirections = new List<Direction>
-                {
-                    Direction.Northeast,
-                    Direction.Southwest,
-                    Direction.Southeast,
-                    Direction.Northwest
-                };
+        {
+            Direction.Northeast,
+            Direction.Southwest,
+            Direction.Southeast,
+            Direction.Northwest
+        };
 
                 var rookDirections = new List<Direction>
-                {
-                    Direction.North,
-                    Direction.South,
-                    Direction.East,
-                    Direction.West
-                };
+        {
+            Direction.North,
+            Direction.South,
+            Direction.East,
+            Direction.West
+        };
 
                 foreach (Piece piece in pieces.ToList())
                 {
-                    Debug.WriteLine($"Piece in checkForLegalMoves: {piece}");
                     Spot start = piece.getCurrentPosition();
+                    if (start == null) continue;
 
                     switch (piece.type)
                     {
                         case PieceType.Rook:
                             foreach (var direction in rookDirections)
                             {
-                                if (checkRookMoves(player, direction, board, start, threatMap))
+                                if (checkRookMoves(direction, board, start))
                                 {
-                                    Debug.WriteLine($"Rook can move in Direction: {direction}");
                                     return true;
                                 }
-                            }
-                            break;
-
-                        case PieceType.Pawn:
-                            if (checkPawnMoves(player, start, board, piece, threatMap))
-                            {
-                                Debug.WriteLine($"Pawn can move");
-                                return true;
-                            }
-                            break;
-
-                        case PieceType.Knight:
-                            if (checkKnightMoves(player, start, board, threatMap))
-                            {
-                                Debug.WriteLine($"Knight can move");
-                                return true;
                             }
                             break;
 
                         case PieceType.Bishop:
                             foreach (var direction in bishopDirections)
                             {
-                                if (checkBishopMoves(player, start, board, direction, threatMap))
+                                if (checkBishopMoves(start, board, direction))
                                 {
-                                    Debug.WriteLine($"Bishop can move in Direction: {direction}");
                                     return true;
                                 }
                             }
@@ -91,28 +67,40 @@ namespace ChessGame.Models
                         case PieceType.Queen:
                             foreach (var direction in rookDirections)
                             {
-                                if (checkRookMoves(player, direction, board, start, threatMap))
+                                if (checkRookMoves(direction, board, start))
                                 {
-                                    Debug.WriteLine($"Queen can move in Direction: {direction}");
                                     return true;
                                 }
                             }
                             foreach (var direction in bishopDirections)
                             {
-                                if (checkBishopMoves(player, start, board, direction, threatMap))
+                                if (checkBishopMoves(start, board, direction))
                                 {
-                                    Debug.WriteLine($"Queen can move in Direction: {direction}");
                                     return true;
                                 }
+                            }
+                            break;
+
+                        case PieceType.Knight:
+                            if (checkKnightMoves(start, board))
+                            {
+                                return true;
+                            }
+                            break;
+
+                        case PieceType.Pawn:
+                            if (checkPawnMoves(start, board, piece))
+                            {
+                                return true;
                             }
                             break;
 
                         case PieceType.King:
                             foreach (Direction direction in Enum.GetValues(typeof(Direction)))
                             {
-                                if (checkKingMoves(player, start, board, direction, threatMap))
+                                if (checkKingMoves(start, board, direction))
                                 {
-                                    Debug.WriteLine($"King can move in Direction: {direction}");
+                                    Debug.WriteLine("King has legal move in direction " + direction);
                                     return true;
                                 }
                             }
@@ -124,13 +112,16 @@ namespace ChessGame.Models
             {
                 Debug.WriteLine($"Error checking legal moves: {e}");
             }
+
+            Debug.WriteLine("No legal moves found.");
             return false;
         }
 
-        private bool checkRookMoves(Player player, Direction direction, Board board, Spot start, ThreatMap threat)
+
+        // === Rook Logic ===
+        private bool checkRookMoves(Direction direction, Board board, Spot start)
         {
             int rowDelta = 0, colDelta = 0;
-
             switch (direction)
             {
                 case Direction.North: rowDelta = -1; break;
@@ -140,172 +131,27 @@ namespace ChessGame.Models
                 default: return false;
             }
 
-            int pieceRow = start.Row + rowDelta;
-            int pieceCol = start.Column + colDelta;
-
-            while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
+            int r = start.Row + rowDelta;
+            int c = start.Column + colDelta;
+            while (r >= 0 && r < 8 && c >= 0 && c < 8)
             {
-                Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
-                Piece currentPiece = currentSpot.Piece;
+                Spot end = board.GetSpot(r, c);
+                if (end.Piece != null && end.Piece.isWhite() == start.Piece.isWhite()) break;
 
-                if (currentPiece != null && currentPiece.isWhite() != start.Piece.isWhite())
-                {
-                    if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
-                        return true;
-                    break;
-                }
-                else if (currentPiece == null)
-                {
-                    if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
-                        return true;
-                }
-                else
-                {
-                    break;
-                }
-
-                pieceRow += rowDelta;
-                pieceCol += colDelta;
-            }
-
-            return false;
-        }
-
-        private bool checkPawnMoves(Player player, Spot start, Board board, Piece pawn, ThreatMap threat)
-        {
-            int direction = player.IsWhite ? -1 : 1;
-            int row = start.Row;
-            int col = start.Column;
-
-            for (int colOffset = -1; colOffset <= 1; colOffset += 2)
-            {
-                int newCol = col + colOffset;
-                int newRow = row + direction;
-
-                if (newCol >= 0 && newCol < 8 && newRow >= 0 && newRow < 8)
-                {
-                    Spot attackSpot = board.GetSpot(newRow, newCol);
-                    Piece targetPiece = attackSpot.Piece;
-
-                    if (targetPiece != null && targetPiece.isWhite() != pawn.isWhite())
-                    {
-                        if (!threat.willMovePutKingInCheck(start, attackSpot, player.IsWhite))
-                            return true;
-                    }
-                }
-            }
-
-            int forwardRow = row + direction;
-            if (forwardRow >= 0 && forwardRow < 8 && board.GetSpot(forwardRow, col).Piece == null)
-            {
-                if (!threat.willMovePutKingInCheck(start, board.GetSpot(forwardRow, col), player.IsWhite))
+                if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
                     return true;
-            }
 
-            if (pawn.isWhite() && row == 6 || !pawn.isWhite() && row == 1)
-            {
-                int middleRow = row + direction;
-                int doubleMoveRow = row + 2 * direction;
-
-                if (board.GetSpot(middleRow, col).Piece == null && board.GetSpot(doubleMoveRow, col).Piece == null)
-                {
-                    if (!threat.willMovePutKingInCheck(start, board.GetSpot(doubleMoveRow, col), player.IsWhite))
-                        return true;
-                }
-            }
-
-            if (PawnEnPassantCheck(player, start, board, pawn, threat))
-                return true;
-
-        return false;
-        }
-
-        private bool PawnEnPassantCheck(Player player, Spot start, Board board, Piece pawn, ThreatMap threat)
-        {
-            int row = start.Row;
-            int col = start.Column;
-            int direction = player.IsWhite ? -1 : 1;
-
-            // Check both adjacent squares (left and right)
-            for (int colOffset = -1; colOffset <= 1; colOffset += 2)
-            {
-                int adjacentCol = col + colOffset;
-
-                if (adjacentCol < 0 || adjacentCol >= 8)
-                    continue;
-
-                Spot adjacentSpot = board.GetSpot(row, adjacentCol);
-                Piece adjacentPiece = adjacentSpot?.Piece;
-
-                // Step 1: Is the adjacent piece an enemy pawn with enPassant flag set?
-                if (adjacentPiece is Pawn enemyPawn && enemyPawn.isWhite() != pawn.isWhite() && enemyPawn.isEnPassant)
-                {
-                    // Step 2: Get the diagonal destination of the en passant capture
-                    Spot endSpot = board.GetSpot(row + direction, adjacentCol);
-
-                    // Step 3: Simulate capture by temporarily removing the adjacent pawn
-                    adjacentSpot.Piece = null;
-
-                    // Use your simulating check function to see if king is still in check
-                    bool kingStillInCheck = !threat.willMovePutKingInCheck(start, endSpot, player.IsWhite);
-
-                    // Step 4: Restore board state
-                    adjacentSpot.Piece = enemyPawn;
-
-                    // If king is not in check after this move, return true
-                    if (!kingStillInCheck)
-                        return true;
-                }
-            }
-
-            return false;
-        }
-
-
-
-        private bool checkKnightMoves(Player player, Spot start, Board board, ThreatMap threat)
-        {
-            int[] rowOffsets = { 2, 2, 1, -1, -2, -2, 1, -1 };
-            int[] colOffsets = { -1, 1, -2, -2, -1, 1, 2, 2 };
-
-            for (int i = 0; i < rowOffsets.Length; i++)
-            {
-                int newRow = start.Row + rowOffsets[i];
-                int newCol = start.Column + colOffsets[i];
-
-                // Ensure the move is within bounds of the board
-                if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8)
-                {
-                    Spot moveSpot = board.GetSpot(newRow, newCol);
-                    Piece targetPiece = moveSpot.Piece;
-                    Piece startPiece = start.Piece;
-
-                    // Check if the target spot is either empty or contains an opponent's piece
-                    if (targetPiece == null || targetPiece.isWhite() != startPiece.isWhite())
-                    {
-                        // Simulate the move and check if it puts the king in check
-                        if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
-                        {
-                            // Check if the king is in check after the move
-                            bool kingInCheck = threat.IsKingInCheck(!player.IsWhite);
-
-                            // If the king is not in check, it's a valid move
-                            if (!kingInCheck)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
+                if (end.Piece != null) break;
+                r += rowDelta;
+                c += colDelta;
             }
             return false;
         }
 
-
-        private bool checkBishopMoves(Player player, Spot start, Board board, Direction direction, ThreatMap threat)
+        // === Bishop Logic ===
+        private bool checkBishopMoves(Spot start, Board board, Direction direction)
         {
-            int colDelta;
-            int rowDelta;
+            int rowDelta = 0, colDelta = 0;
             switch (direction)
             {
                 case Direction.Northeast: rowDelta = -1; colDelta = 1; break;
@@ -315,86 +161,161 @@ namespace ChessGame.Models
                 default: return false;
             }
 
-            int pieceRow = start.Row + rowDelta;
-            int pieceCol = start.Column + colDelta;
-
-            while (pieceRow >= 0 && pieceRow < 8 && pieceCol >= 0 && pieceCol < 8)
+            int r = start.Row + rowDelta;
+            int c = start.Column + colDelta;
+            while (r >= 0 && r < 8 && c >= 0 && c < 8)
             {
-                Spot currentSpot = board.GetSpot(pieceRow, pieceCol);
-                Piece pieceAtSpot = currentSpot.Piece;
+                Spot end = board.GetSpot(r, c);
+                if (end.Piece != null && end.Piece.isWhite() == start.Piece.isWhite()) break;
 
-                Debug.WriteLine("Checking Location: " + currentSpot);
-                // If there is a piece of the same color, stop the movement
-                if (pieceAtSpot != null && pieceAtSpot.isWhite() == start.Piece.isWhite())
-                    break;
+                if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
+                    return true;
 
-                // Simulate the move and check if it would put the king in check
-                if (!threat.willMovePutKingInCheck(start, currentSpot, player.IsWhite))
+                if (end.Piece != null) break;
+                r += rowDelta;
+                c += colDelta;
+            }
+            return false;
+        }
+
+        // === Knight Logic ===
+        private bool checkKnightMoves(Spot start, Board board)
+        {
+            int[] rowOffsets = { 2, 2, 1, -1, -2, -2, 1, -1 };
+            int[] colOffsets = { -1, 1, -2, -2, -1, 1, 2, 2 };
+
+            for (int i = 0; i < 8; i++)
+            {
+                int row = start.Row + rowOffsets[i];
+                int column = start.Column + colOffsets[i];
+                if (row < 0 || row > 7 || column < 0 || column > 7) continue;
+
+                Spot end = board.GetSpot(row, column);
+                if (end.Piece != null && end.Piece.isWhite() == start.Piece.isWhite()) continue;
+
+                // Check if move puts king in check
+                if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
                 {
-                    // Check if the king is in check after the simulated move (important!)
-                    bool kingInCheck = threat.IsKingInCheck(!player.IsWhite);
-                    if (!kingInCheck)
+                    // Check if the king is still in check after this move
+                    bool kingStillInCheck = threatMap.IsKingInCheck(game.currentTurn.IsWhite);
+                    if (!kingStillInCheck)
                     {
-                        return true;  // The move is legal, as it doesn't put the king in check
+                        // This move gets the king out of check, so it's legal
+                        return true;
                     }
                 }
-
-                // If the piece at the spot is an opponent's piece, stop the movement
-                if (pieceAtSpot != null && pieceAtSpot.isWhite() != start.Piece.isWhite())
-                    break;
-
-                // Continue moving in the current direction
-                pieceRow += rowDelta;
-                pieceCol += colDelta;
             }
             return false;
         }
 
 
-        private bool checkKingMoves(Player player, Spot start, Board board, Direction direction, ThreatMap threat)
-        {
-            int row = start.Row, col = start.Column;
-            int newRow = row, newCol = col;
 
-            // Calculate the target position based on the direction
+        // === King Logic ===
+        private bool checkKingMoves(Spot start, Board board, Direction direction)
+        {
+            int r = start.Row, c = start.Column;
             switch (direction)
             {
-                case Direction.North: newRow -= 1; break;
-                case Direction.South: newRow += 1; break;
-                case Direction.East: newCol += 1; break;
-                case Direction.West: newCol -= 1; break;
-                case Direction.Northeast: newRow -= 1; newCol += 1; break;
-                case Direction.Northwest: newRow -= 1; newCol -= 1; break;
-                case Direction.Southeast: newRow += 1; newCol += 1; break;
-                case Direction.Southwest: newRow += 1; newCol -= 1; break;
+                case Direction.North: r -= 1; break;
+                case Direction.South: r += 1; break;
+                case Direction.East: c += 1; break;
+                case Direction.West: c -= 1; break;
+                case Direction.Northeast: r -= 1; c += 1; break;
+                case Direction.Northwest: r -= 1; c -= 1; break;
+                case Direction.Southeast: r += 1; c += 1; break;
+                case Direction.Southwest: r += 1; c -= 1; break;
                 default: return false;
             }
 
-            // Check bounds
-            if (newRow < 0 || newRow >= 8 || newCol < 0 || newCol >= 8)
-                return false;
+            if (r < 0 || r > 7 || c < 0 || c > 7) return false;
 
-            Spot moveSpot = board.GetSpot(newRow, newCol);
-            Piece targetPiece = moveSpot.Piece;
+            Spot end = board.GetSpot(r, c);
+            if (end.Piece != null && end.Piece.isWhite() == start.Piece.isWhite()) return false;
 
-
-            // Don't move into a square occupied by a friendly piece
-            if (targetPiece != null && targetPiece.isWhite() == start.Piece.isWhite())
-                return false;
-
-            // Simulate the move and check if the king would still be in check
-            if (!threat.willMovePutKingInCheck(start, moveSpot, player.IsWhite))
-            {
-                Debug.WriteLine("King can legally move to: " + moveSpot);
-                Debug.WriteLine($"Is king in check: {threat.IsKingInCheck(!player.IsWhite)}");
-                Debug.WriteLine($"Is Square under threat: {threat.IsSquareUnderThreat(player.IsWhite, moveSpot.Row, moveSpot.Column)}");
+            if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
                 return true;
-            }
 
             return false;
         }
 
+        // === Pawn Logic ===
+        private bool checkPawnMoves(Spot start, Board board, Piece pawn)
+        {
+            int direction = pawn.isWhite() ? -1 : 1;
+            int r = start.Row;
+            int c = start.Column;
 
+            // Diagonal captures
+            foreach (int offset in new[] { -1, 1 })
+            {
+                int newC = c + offset;
+                int newR = r + direction;
+                if (newC < 0 || newC > 7 || newR < 0 || newR > 7) continue;
 
+                Spot end = board.GetSpot(newR, newC);
+                if (end.Piece != null && end.Piece.isWhite() != pawn.isWhite())
+                {
+                    if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
+                        return true;
+                }
+            }
+
+            // Single forward move
+            int oneAhead = r + direction;
+            if (oneAhead >= 0 && oneAhead <= 7 && board.GetSpot(oneAhead, c).Piece == null)
+            {
+                Spot end = board.GetSpot(oneAhead, c);
+                if (!threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite))
+                    return true;
+
+                // Double forward move
+                bool onStartingRow = (pawn.isWhite() && r == 6) || (!pawn.isWhite() && r == 1);
+                if (onStartingRow)
+                {
+                    int twoAhead = r + 2 * direction;
+                    if (board.GetSpot(twoAhead, c).Piece == null)
+                    {
+                        Spot end2 = board.GetSpot(twoAhead, c);
+                        if (!threatMap.willMovePutKingInCheck(start, end2, game.currentTurn.IsWhite))
+                            return true;
+                    }
+                }
+            }
+
+            // En Passant
+            if (PawnEnPassantCheck(start, board, pawn))
+                return true;
+
+            return false;
+        }
+
+        private bool PawnEnPassantCheck(Spot start, Board board, Piece pawn)
+        {
+            int row = start.Row;
+            int col = start.Column;
+            int direction = game.currentTurn.IsWhite ? -1 : 1;
+
+            for (int colOffset = -1; colOffset <= 1; colOffset += 2)
+            {
+                int adjCol = col + colOffset;
+                if (adjCol < 0 || adjCol > 7) continue;
+
+                Spot adjSpot = board.GetSpot(row, adjCol);
+                Piece adjPiece = adjSpot?.Piece;
+
+                if (adjPiece is Pawn enemyPawn && enemyPawn.isWhite() != pawn.isWhite() && enemyPawn.isEnPassant)
+                {
+                    Spot end = board.GetSpot(row + direction, adjCol);
+
+                    adjSpot.Piece = null;
+                    bool legal = !threatMap.willMovePutKingInCheck(start, end, game.currentTurn.IsWhite);
+                    adjSpot.Piece = enemyPawn;
+
+                    if (legal) return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

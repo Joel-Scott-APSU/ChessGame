@@ -33,8 +33,9 @@ namespace MovesTests
             board = new Board(whitePlayer, blackPlayer, game);
             game.board = board;
             threatMap = new ThreatMap(whitePlayer, blackPlayer, game);
-            moves = new Moves(whitePlayer, blackPlayer, gameRules, threatMap);
+            moves = new Moves(game);
             activePieces = new HashSet<Piece>();
+            game.SetCurrentTurn(blackPlayer);
         }
         [TestMethod]
         [STAThread]
@@ -115,7 +116,7 @@ namespace MovesTests
             gameRules.AddActivePiece(whiteQueen1);
             gameRules.AddActivePiece(whiteQueen2);
 
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -143,7 +144,7 @@ namespace MovesTests
             gameRules.AddActivePiece(whiteQueen);
             gameRules.AddActivePiece(whiteRook);
 
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsFalse(result, "Black should be in checkmate");
         }
@@ -184,20 +185,24 @@ namespace MovesTests
             Piece blackKing = new King(false);
             Piece whiteRook = new Rook(true);
             Piece blackBishop = new Bishop(false);
+            Piece whiteKing = new King(true);
 
+            game.SetCurrentTurn(blackPlayer); // Set the current turn to black player
             board.clearBoard();
             board.CreatePieces(blackKing, 7, 7, blackPlayer);
             board.CreatePieces(whiteRook, 7, 5, whitePlayer);
             board.CreatePieces(blackBishop, 6, 6, blackPlayer);
+            board.CreatePieces(whiteKing, 5, 6, whitePlayer); // White king to ensure checkmate scenario
 
             gameRules.InitializeActivePiecesForTest();
 
             gameRules.AddActivePiece(blackKing);
             gameRules.AddActivePiece(whiteRook);
             gameRules.AddActivePiece(blackBishop);
+            gameRules.AddActivePiece(whiteKing);
 
             // The black bishop should be able to capture the white rook on F8
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsTrue(result, "Black should be able to capture the rook with the bishop and escape checkmate.");
         }
@@ -249,7 +254,7 @@ namespace MovesTests
             gameRules.AddActivePiece(whiteQueen);
             gameRules.AddActivePiece(whiteRook);
 
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsTrue(result, "Black should be able to move to H7 and escape checkmate.");
         }
@@ -273,131 +278,25 @@ namespace MovesTests
             gameRules.AddActivePiece(whiteRook);
             gameRules.AddActivePiece(blackRook);
 
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsTrue(result, "Black should be able to block the checkmate with the Rook.");
         }
 
         [TestMethod]
         [STAThread]
-        public void TestEnPassantSetup()
-        {
-            // Set up the board
-            board.clearBoard();
-
-            // Create pawns
-            Pawn whitePawn = new Pawn(true);
-            Pawn blackPawn = new Pawn(false);
-
-            // Place kings back on the board after clearing
-            board.CreatePieces(new King(true), 0, 4, whitePlayer);
-            board.CreatePieces(new King(false), 7, 4, blackPlayer);
-
-            // Place white pawn at its starting position
-            board.CreatePieces(whitePawn, 6, 4, whitePlayer);
-            // Place black pawn at its starting position
-            board.CreatePieces(blackPawn, 1, 5, blackPlayer);
-
-            // Move white pawn two squares forward (this should set it up for en passant)
-            Spot startSpot = board.GetSpot(6, 4);
-            Spot endSpot = board.GetSpot(4, 4); // Moving to row 4 from row 6
-            whitePawn.legalMove(threatMap, startSpot, endSpot, board);
-
-            // Check that the white pawn is set for en passant
-            Assert.IsTrue(whitePawn.isEnPassant, "White pawn should be marked for en passant after moving two squares forward.");
-
-            // Move black pawn next to white pawn
-            Spot blackStartSpot = board.GetSpot(1, 5);
-            Spot blackEndSpot = board.GetSpot(2, 5); // Moving to row 2 from row 1
-            blackPawn.legalMove(threatMap, blackStartSpot, blackEndSpot, board);
-
-            // Now try en passant move
-            Spot enPassantSpot = board.GetSpot(4, 5); // The spot where the white pawn will be captured en passant
-            Spot captureSpot = board.GetSpot(5, 4); // The destination spot for the black pawn capturing en passant
-            bool moveResult = blackPawn.legalMove(threatMap, blackEndSpot, captureSpot, board);
-
-            // Check that the black pawn can capture the white pawn en passant
-            Assert.IsTrue(moveResult, "Black pawn should be able to capture white pawn en passant.");
-            Assert.IsNull(board.GetSpot(4, 4).Piece, "The white pawn should be removed from the board after en passant.");
-        }
-
-        [TestMethod]
-        [STAThread]
-        public async Task TestKingSideCastle()
-        {
-            // Set up the board
-            board.clearBoard();
-            gameRules.InitializeActivePiecesForTest();
-            // Create the necessary pieces for kingside castling (White King and White Rook)
-            Piece whiteKing = new King(true);
-            Piece whiteRook = new Rook(true);
-
-            // Place the King and Rook on their initial positions
-            board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
-            board.CreatePieces(whiteRook, 7, 7, whitePlayer); // Rook at H1 (7,7)
-
-            // Ensure the spaces between the King and Rook are clear and no threat is posed
-            board.GetSpot(7, 5).Piece = null; // F1
-            board.GetSpot(7, 6).Piece = null; // G1
-
-            // Attempt to castle kingside
-            ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
-            ChessBoardSquare rookTo = new ChessBoardSquare(7, 7); // This is where we check castling
-
-            var (moveSuccessful, enPassant, castledKingSide, castledQueenSide) = await game.movePiece(kingFrom, rookTo);
-
-            // Assert that kingside castling was successful
-            Assert.IsTrue(castledKingSide, "White should be able to castle kingside.");
-
-        }
-
-        [TestMethod]
-        [STAThread]
-        public async Task TestQueenSideCastle()
-        {
-            // Set up the board
-            board.clearBoard();
-
-            // Create the necessary pieces for queenside castling (White King and White Rook)
-            Piece whiteKing = new King(true);
-            Piece whiteRook = new Rook(true);
-
-            // Place the King and Rook on their initial positions
-            board.CreatePieces(whiteKing, 7, 4, whitePlayer); // King at E1 (7,4)
-            board.CreatePieces(whiteRook, 7, 0, whitePlayer); // Rook at A1 (7,0)
-
-            // Ensure the spaces between the King and Rook are clear and no threat is posed
-            board.GetSpot(7, 1).Piece = null; // B1
-            board.GetSpot(7, 2).Piece = null; // C1
-            board.GetSpot(7, 3).Piece = null; // D1
-
-            // Attempt to castle queenside
-            ChessBoardSquare kingFrom = new ChessBoardSquare(7, 4);
-            ChessBoardSquare rookTo = new ChessBoardSquare(7, 0); // This is where we check castling
-
-            var (moveSuccessful, enPassant, castledKingSide, castledQueenSide) = await game.movePiece(kingFrom, rookTo);
-
-            // Assert that queenside castling was successful
-            Assert.IsTrue(castledQueenSide, "White should be able to castle queenside.");
-            Assert.IsNull(board.GetSpot(7, 4).Piece, "The King's original spot (E1) should be empty.");
-            Assert.IsNotNull(board.GetSpot(7, 2).Piece, "The King should be moved to C1.");
-            Assert.IsNotNull(board.GetSpot(7, 3).Piece, "The Rook should be moved to D1.");
-        }
-
-        [TestMethod]
-        [STAThread]
         public void Test_KingHasLegalMove_NotCheckmate()
         {
-
-
             board.clearBoard();
 
             // Create white king on E1 (7,4)
             Piece whiteKing = new King(true);
             Piece blackRook = new Rook(false);
+            Piece blackKing = new King(false);
 
             board.CreatePieces(whiteKing, 7, 4, whitePlayer);
             board.CreatePieces(blackRook, 6, 4, blackPlayer);
+            board.CreatePieces(blackKing, 0, 7, blackPlayer); // Place black king somewhere safe
 
             gameRules.InitializeActivePiecesForTest();
             //Create white king on E1 (7,4)
@@ -406,18 +305,11 @@ namespace MovesTests
             // Create black rook on E2 (6,4), threatening the king
             gameRules.AddActivePiece(blackRook);
 
+            gameRules.AddActivePiece(blackKing);
+
             // Call checkForLegalMoves to determine if the king has an escape
-            bool hasLegalMoves = !moves.checkForLegalMoves(whitePlayer, board, gameRules.GetActivePieces(true));
+            bool hasLegalMoves = moves.checkForLegalMoves(whitePlayer, board, gameRules.GetActivePieces(true));
 
-            foreach (var piece in gameRules.GetActivePieces(true))
-            {
-                Debug.WriteLine($"White Active Piece: {piece}");
-            }
-
-            foreach (var piece in gameRules.GetActivePieces(false))
-            {
-                Debug.WriteLine($"Black Active Piece: {piece}");
-            }
             // Assert that the king is not in checkmate
             Assert.IsTrue(hasLegalMoves, "King should be able to move out of check.");
         }
@@ -427,6 +319,7 @@ namespace MovesTests
         {
             board.clearBoard();
 
+            game.SetCurrentTurn(blackPlayer);
             // Black King on H8 (0, 7)
             Piece blackKing = new King(false);
             board.CreatePieces(blackKing, 0, 7, blackPlayer);
@@ -439,15 +332,18 @@ namespace MovesTests
             Piece whiteRook1 = new Rook(true);
             board.CreatePieces(whiteRook1, 1, 6, whitePlayer);
 
+            Piece whiteKing = new King(true);
+            board.CreatePieces(whiteKing, 7, 0, whitePlayer); // Place white king somewhere safe
+
             gameRules.InitializeActivePiecesForTest();
 
             gameRules.AddActivePiece(blackKing);
             gameRules.AddActivePiece(whiteRook1);
             gameRules.AddActivePiece(whiteQueen);
+            gameRules.AddActivePiece(whiteKing);
 
             bool hasLegalMoves = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
-            Debug.WriteLine(hasLegalMoves);
             Assert.IsFalse(hasLegalMoves, "Black King is in checkmate and should have no legal moves.");
         }
 
@@ -456,6 +352,7 @@ namespace MovesTests
         {
             board.clearBoard();
 
+            game.SetCurrentTurn(blackPlayer);
             gameRules.InitializeActivePiecesForTest();
 
             // Black King on H8 (0,7)
@@ -635,12 +532,334 @@ namespace MovesTests
             gameRules.AddActivePiece(whiteRook);
             gameRules.AddActivePiece(whitePawn);
 
-            bool result = !moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
 
             Assert.IsTrue(result, "Black pawn should be able to perform en passant capture and escape check.");
         }
 
+        [TestMethod]
+        [STAThread]
+        public void TestPawnBlocksCheck()
+        {
+            board.clearBoard();
 
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece blackPawn = new Pawn(false);
+            Piece whiteKing = new King(true);
+
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 5, 7, whitePlayer);
+            board.CreatePieces(blackPawn, 6, 6, blackPlayer); // Can block at (6,7)
+            board.CreatePieces(whiteKing, 0, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(whiteRook);
+            gameRules.AddActivePiece(blackPawn);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsTrue(result, "Black pawn should be able to block the check.");
+        }
+
+        [TestMethod]
+        [STAThread]
+        public void TestKnightCapturesToPreventCheckmate()
+        {
+            board.clearBoard();
+
+            Piece blackKing = new King(false);
+            Piece whiteQueen = new Queen(true);
+            Piece blackKnight = new Knight(false);
+            Piece whiteKing = new King(true);
+
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteQueen, 6, 5, whitePlayer); // Delivering check
+            board.CreatePieces(blackKnight, 5, 6, blackPlayer); // Can jump to (6,5) and capture
+            board.CreatePieces(whiteKing, 0, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(whiteQueen);
+            gameRules.AddActivePiece(blackKnight);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsTrue(result, "Black knight should be able to capture the queen and stop checkmate.");
+        }
+
+        [TestMethod]
+        [STAThread]
+        public void TestBishopBlocksDiagonalCheck()
+        {
+            board.clearBoard();
+
+            Piece blackKing = new King(false);
+            Piece whiteBishop = new Bishop(true);
+            Piece blackBishop = new Bishop(false);
+            Piece whiteKing = new King(true);
+
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteBishop, 5, 5, whitePlayer); // Delivering diagonal check
+            board.CreatePieces(blackBishop, 6, 6, blackPlayer); // Can block at (6,6)
+            board.CreatePieces(whiteKing, 0, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(whiteBishop);
+            gameRules.AddActivePiece(blackBishop);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsTrue(result, "Black bishop should be able to block the diagonal check.");
+        }
+
+        [TestMethod]
+        [STAThread]
+        public void TestRookBlocksHorizontalCheck()
+        {
+            board.clearBoard();
+
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece blackRook = new Rook(false);
+            Piece whiteKing = new King(true);
+
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 7, 5, whitePlayer); // Delivering check
+            board.CreatePieces(blackRook, 7, 6, blackPlayer); // Can block the check
+            board.CreatePieces(whiteKing, 0, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(whiteRook);
+            gameRules.AddActivePiece(blackRook);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsTrue(result, "Black rook should be able to block the horizontal check.");
+        }
+
+        [TestMethod]
+        [STAThread]
+        public void TestQueenCapturesToPreventCheckmate()
+        {
+            board.clearBoard();
+
+            Piece blackKing = new King(false);
+            Piece whiteRook = new Rook(true);
+            Piece blackQueen = new Queen(false);
+            Piece whiteKing = new King(true);
+
+            board.CreatePieces(blackKing, 7, 7, blackPlayer);
+            board.CreatePieces(whiteRook, 7, 5, whitePlayer); // Check on same rank
+            board.CreatePieces(blackQueen, 6, 6, blackPlayer); // Can capture rook at (7,5)
+            board.CreatePieces(whiteKing, 0, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(whiteRook);
+            gameRules.AddActivePiece(blackQueen);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsTrue(result, "Black queen should be able to capture the rook and escape checkmate.");
+        }
+
+        [TestMethod]
+        [STAThread]
+        public void TestPinnedRookBlocksKingAndNoLegalMoves()
+        {
+            board.clearBoard();
+
+            // Black King on E8 (0,4)
+            Piece blackKing = new King(false);
+            board.CreatePieces(blackKing, 0, 4, blackPlayer);
+
+            // Black Rook on E7 (1,4) — pinned piece
+            Piece blackRook = new Rook(false);
+            board.CreatePieces(blackRook, 1, 4, blackPlayer);
+
+            // White Rook on E1 (7,4) — pinning rook along file
+            Piece whiteRook = new Rook(true);
+            board.CreatePieces(whiteRook, 7, 4, whitePlayer);
+
+            // White Rook on D8 (0,3) — controlling king escape square
+            Piece whiteRook2 = new Rook(true);
+            board.CreatePieces(whiteRook2, 0, 3, whitePlayer);
+
+            // White Rook on F8 (0,5) — controlling king escape square
+            Piece whiteRook3 = new Rook(true);
+            board.CreatePieces(whiteRook3, 0, 5, whitePlayer);
+
+            // White King somewhere safe
+            Piece whiteKing = new King(true);
+            board.CreatePieces(whiteKing, 7, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+
+            gameRules.AddActivePiece(blackKing);
+            gameRules.AddActivePiece(blackRook);
+            gameRules.AddActivePiece(whiteRook);
+            gameRules.AddActivePiece(whiteRook2);
+            gameRules.AddActivePiece(whiteRook3);
+            gameRules.AddActivePiece(whiteKing);
+
+            bool result = moves.checkForLegalMoves(blackPlayer, board, gameRules.GetActivePieces(false));
+
+            Assert.IsFalse(result, "Black rook is pinned, king cannot move, no legal moves — checkmate.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingFails_KingHasMoved()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = true };
+            var whiteRookKingside = new Rook(true) { hasMoved = false };
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);  // E1
+            board.CreatePieces(whiteRookKingside, 7, 7, whitePlayer);  // H1
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookKingside);
+
+            var kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, true, board); // Kingside
+
+            Assert.IsFalse(result, "Castling should fail if the king has already moved.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingFails_RookHasMoved()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = false };
+            var whiteRookKingside = new Rook(true) { hasMoved = true };
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);
+            board.CreatePieces(whiteRookKingside, 7, 7, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookKingside);
+
+            ChessBoardSquare kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, true, board); // Kingside
+
+            Assert.IsFalse(result, "Castling should fail if the rook has already moved.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingFails_PiecesBetweenKingAndRook()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = false };
+            var whiteRookKingside = new Rook(true) { hasMoved = false };
+            var blockingPiece = new Knight(true);
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);
+            board.CreatePieces(whiteRookKingside, 7, 7, whitePlayer);
+            board.CreatePieces(blockingPiece, 7, 5, whitePlayer); // Piece between king and rook
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookKingside);
+            gameRules.AddActivePiece(blockingPiece);
+
+            ChessBoardSquare kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, true, board); // Kingside
+
+            Assert.IsFalse(result, "Castling should fail if pieces are between the king and rook.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingFails_KingInCheckOrPassesThroughCheck()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = false };
+            var whiteRookKingside = new Rook(true) { hasMoved = false };
+            var blackRook = new Rook(false);
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);
+            board.CreatePieces(whiteRookKingside, 7, 7, whitePlayer);
+
+            // Black rook attacking square king must cross (F1 - 7,5)
+            board.CreatePieces(blackRook, 5, 5, blackPlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookKingside);
+            gameRules.AddActivePiece(blackRook);
+
+            ChessBoardSquare kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, true, board); // Kingside
+
+            Assert.IsFalse(result, "Castling should fail if the king is in check or passes through attacked squares.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingSucceeds_Kingside()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = false };
+            var whiteRookKingside = new Rook(true) { hasMoved = false };
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);
+            board.CreatePieces(whiteRookKingside, 7, 7, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookKingside);
+
+            ChessBoardSquare kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, true, board); // Kingside
+
+            Assert.IsTrue(result, "Castling should succeed kingside when all conditions are met.");
+        }
+
+        [TestMethod]
+        public async Task TestCastlingSucceeds_Queenside()
+        {
+            board.clearBoard();
+
+            var whiteKing = new King(true) { hasMoved = false };
+            var whiteRookQueenside = new Rook(true) { hasMoved = false };
+
+            board.CreatePieces(whiteKing, 7, 4, whitePlayer);
+            board.CreatePieces(whiteRookQueenside, 7, 0, whitePlayer);
+
+            gameRules.InitializeActivePiecesForTest();
+            gameRules.AddActivePiece(whiteKing);
+            gameRules.AddActivePiece(whiteRookQueenside);
+
+            ChessBoardSquare kingSquare = new ChessBoardSquare(7, 4) { piece = whiteKing };
+
+            bool result = await gameRules.PerformCastling(whiteKing, kingSquare, false, board); // Queenside
+
+            Assert.IsTrue(result, "Castling should succeed queenside when all conditions are met.");
+        }
 
     }
 }
