@@ -95,6 +95,7 @@ namespace ChessGame.Views
         // === Private Fields ===
         private Game game;
         private bool _IsAwaitingPromotion = false;
+        private bool _IsGameOver = false;
         private ChessBoardSquare selectedSquare;
         private Brush _currentTurnColor;
         private bool _isPromotionVisible;
@@ -121,6 +122,11 @@ namespace ChessGame.Views
             if (_IsAwaitingPromotion)
             {
                 InvalidMoveMessage = "Promote Your Pawn.";
+                return;
+            }
+            else if (_IsGameOver)
+            {
+
                 return;
             }
 
@@ -189,11 +195,9 @@ namespace ChessGame.Views
 
                     game.gameRules.WriteMoveOutput(result.movingPiece, game.currentTurn, result.fromSquare, result.toSquare, result.capturedPiece);
 
-
-                    bool gameResult = game.EndGame();
-                    if (gameResult)
+                    if (game.EndGame())
                     {
-                        _IsAwaitingPromotion = true;
+                        _IsGameOver = true;
                     }
 
                     }

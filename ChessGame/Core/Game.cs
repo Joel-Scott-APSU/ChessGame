@@ -7,19 +7,21 @@ using System.Diagnostics;
 public class Game
 {
     private static Game _instance;
+    private MainWindowViewModel _viewModel;
     public Board board { get; set; }
     public Player whitePlayer { get; private set; }
     public Player blackPlayer { get; private set; }
     public Player currentTurn { get; private set; }
     public ChessBoardSquare selectedSquare { get; set; }
     public Moves moves { get; private set; }
-
     public ThreatMap threatMap { get; private set; }
     public GameRules gameRules;
-
+    
     // Private constructor to prevent multiple instances
     private Game(MainWindowViewModel viewModel)
     {
+        _viewModel = viewModel;
+
         gameRules = GameRules.GetInstance(this, viewModel);
         gameRules = GameRules.Create(this, viewModel);
         initializeGame();
@@ -62,17 +64,18 @@ public class Game
     {
         if (gameRules.Draw())
         {
-            Debug.WriteLine("Game ended in a draw.");
+            _viewModel.InvalidMoveMessage = "Draw";
             return true;
         }
 
         else if (gameRules.Checkmate(currentTurn))
         {
-            string currentPlayer = currentTurn.IsWhite ? "Black" : "White";
-            Debug.WriteLine($"{currentPlayer} wins by checkmate.");
+            string winner = currentTurn.IsWhite ? "Black Player Wins" : "White Player Wins";
+            _viewModel.InvalidMoveMessage = winner;
             return true;
         }
 
+        _viewModel.InvalidMoveMessage = "";
         return false;
     }
 
