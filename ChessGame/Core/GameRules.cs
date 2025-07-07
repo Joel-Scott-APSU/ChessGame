@@ -67,6 +67,8 @@ namespace ChessGame.Core
             Piece? capturedPiece = null;
 
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
+            {
+                Debug.WriteLine("Test 1");
                 return new MoveResult
                 {
                     MoveSuccessful = false,
@@ -78,8 +80,11 @@ namespace ChessGame.Core
                     fromSquare = fromSquare,
                     toSquare = toSquare
                 };
+            }
 
             if (threatMap.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
+            {
+                Debug.WriteLine("Test 2");
                 return new MoveResult
                 {
                     MoveSuccessful = false,
@@ -91,6 +96,7 @@ namespace ChessGame.Core
                     fromSquare = fromSquare,
                     toSquare = toSquare
                 };
+            }
 
             bool moveSuccessful = false;
             bool enPassantCaptureOccurred = false;

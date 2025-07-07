@@ -36,19 +36,19 @@ namespace ChessGame.Models
         {
             // White pieces
             CreatePieces(new Piece.King(true), 7, 4, whitePlayer);
-            //CreatePieces(new Piece.Queen(true), 7, 3, whitePlayer);
-            //CreatePieces(new Piece.Rook(true), 7, 0, whitePlayer);
-            //CreatePieces(new Piece.Rook(true), 7, 7, whitePlayer);
-            //CreatePieces(new Piece.Knight(true), 7, 1, whitePlayer);
-            //CreatePieces(new Piece.Knight(true), 7, 6, whitePlayer);
-            //CreatePieces(new Piece.Bishop(true), 7, 2, whitePlayer);
+            CreatePieces(new Piece.Queen(true), 7, 3, whitePlayer);
+            CreatePieces(new Piece.Rook(true), 7, 0, whitePlayer);
+            CreatePieces(new Piece.Rook(true), 7, 7, whitePlayer);
+            CreatePieces(new Piece.Knight(true), 7, 1, whitePlayer);
+            CreatePieces(new Piece.Knight(true), 7, 6, whitePlayer);
+            CreatePieces(new Piece.Bishop(true), 7, 2, whitePlayer);
             CreatePieces(new Piece.Bishop(true), 7, 5, whitePlayer);
-            //for (int i = 0; i < 8; i++)
-               // CreatePieces(new Piece.Pawn(true), 6, i, whitePlayer);*/
+            for (int i = 0; i < 8; i++)
+               CreatePieces(new Piece.Pawn(true), 6, i, whitePlayer);
 
             // Black pieces
             CreatePieces(new Piece.King(false), 0, 4, blackPlayer);
-            /*CreatePieces(new Piece.Queen(false), 0, 3, blackPlayer);
+            CreatePieces(new Piece.Queen(false), 0, 3, blackPlayer);
             CreatePieces(new Piece.Rook(false), 0, 0, blackPlayer);
             CreatePieces(new Piece.Rook(false), 0, 7, blackPlayer);
             CreatePieces(new Piece.Knight(false), 0, 1, blackPlayer);
@@ -56,7 +56,7 @@ namespace ChessGame.Models
             CreatePieces(new Piece.Bishop(false), 0, 2, blackPlayer);
             CreatePieces(new Piece.Bishop(false), 0, 5, blackPlayer);
             for (int i = 0; i < 8; i++)
-                CreatePieces(new Piece.Pawn(false), 1, i, blackPlayer);*/
+                CreatePieces(new Piece.Pawn(false), 1, i, blackPlayer);
 
             // Clear middle rows
             for (int i = 2; i < 6; i++)

@@ -5,39 +5,15 @@
         xmlns:local1="clr-namespace:ChessGame.Helpers"
         xmlns:scm="clr-namespace:System.ComponentModel;assembly=WindowsBase"
         Title="Chess Game"
-        SizeToContent="WidthAndHeight"
+        SizeToContent="Manual"
+        WindowState="Maximized"
+        ResizeMode="CanResize"
         Background="#552F23">
     
     <Window.Resources>
         <local1:PositionConverter x:Key="PositionConverter"/>
         <local1:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
         <local1:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
-        <Style TargetType="RadioButton" x:Key="GreenDotRadioButton">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="RadioButton">
-                        <BulletDecorator Background="Transparent">
-                            <BulletDecorator.Bullet>
-                                <Grid Width="16" Height="16">
-                                    <Ellipse Stroke="White" StrokeThickness="2"/>
-                                    <Ellipse x:Name="InnerDot" Width="8" Height="8" Fill="Green" Visibility="Collapsed"/>
-                                </Grid>
-                            </BulletDecorator.Bullet>
-                            <ContentPresenter Margin="5,0,0,0"
-                                      VerticalAlignment="Center"
-                                      RecognizesAccessKey="True"/>
-                        </BulletDecorator>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="InnerDot" Property="Visibility" Value="Visible"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
     </Window.Resources>
 
     <!-- Center board + controls together -->
