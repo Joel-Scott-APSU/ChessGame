@@ -12,6 +12,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Chess.Core;
 using ChessGame.Commands;
+using ChessGame.Core;
 using ChessGame.Models;
 using static ChessGame.Models.Piece;
 
@@ -25,9 +26,11 @@ namespace ChessGame.Views
         // === Public Properties ===
 
         public ObservableCollection<ChessBoardSquare> ChessBoardSquares { get; set; }
-        public ObservableCollection<string> MoveLog { get; } = new ObservableCollection<string>();
+        public ObservableCollection<string> WhiteMoves { get; set; } = new();
+        public ObservableCollection<string> BlackMoves { get; set; } = new();
         public ICommand SquareClickedCommand { get; }
         public ICommand PromoteCommand { get; }
+        public ICommand ClaimDrawCommand { get; }
 
         public string _currentTurnText;
         public string CurrentTurnText
@@ -91,6 +94,18 @@ namespace ChessGame.Views
 
         public bool IsBlackTurn => !IsWhiteTurn;
 
+        private bool _isDrawClaimVisible;
+        public bool IsDrawClaimVisible
+        {
+            get => _isDrawClaimVisible;
+            set
+            {
+                _isDrawClaimVisible = value;
+                OnPropertyChanged(nameof(IsDrawClaimVisible));
+            }
+        }
+
+
 
         // === Private Fields ===
         private Game game;
@@ -114,6 +129,7 @@ namespace ChessGame.Views
             UpdateTurnDisplay(game.currentTurn);
 
             PromoteCommand = new RelayCommand(param => HandlePromotion(param));
+            ClaimDrawCommand = new RelayCommand(_ => HandleClaimDraw());
         }
 
         // === Core UI Logic ===
@@ -177,12 +193,18 @@ namespace ChessGame.Views
                     else if (result.CastledKingSide)
                     {
                         MovePiecesCastleKingside(selectedSquare, square);
-                        MoveLog.Insert(0, "O-O");
+                        if(game.currentTurn.IsWhite)
+                            WhiteMoves.Insert(0, "O-O");
+                        else
+                            BlackMoves.Insert(0, "O-O");
                     }
                     else if (result.CastledQueenSide)
                     {
                         MovePiecesCastleQueenside(selectedSquare, square);
-                        MoveLog.Insert(0, "O-O-O");
+                        if (game.currentTurn.IsWhite)
+                            WhiteMoves.Insert(0, "O-O-O");
+                        else
+                            BlackMoves.Insert(0, "O-O-O");
                     }
                     else
                     {
@@ -191,9 +213,17 @@ namespace ChessGame.Views
 
 
                     OnPropertyChanged(nameof(CurrentTurnText));
-                    game.gameRules.swapTurn();
-
                     game.gameRules.WriteMoveOutput(result.movingPiece, game.currentTurn, result.fromSquare, result.toSquare, result.capturedPiece);
+                    if(game.gameRules.counter >= 100)
+                    {
+                        IsDrawClaimVisible = true;
+                    }
+                    else
+                    {
+                        IsDrawClaimVisible = false;
+                    }
+                
+                    game.gameRules.swapTurn();
 
                     if (game.EndGame())
                     {
@@ -415,6 +445,13 @@ namespace ChessGame.Views
         protected void OnPropertyChanged(string name)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
+
+        public void HandleClaimDraw()
+        {
+            _IsGameOver = true;
+            InvalidMoveMessage = "Draw claimed by player.";
+
         }
     }
 }

@@ -9,7 +9,7 @@
         WindowState="Maximized"
         ResizeMode="CanResize"
         Background="#552F23">
-    
+
     <Window.Resources>
         <local1:PositionConverter x:Key="PositionConverter"/>
         <local1:BooleanToHighlightBorderBrushConverter x:Key="BooleanToHighlightBorderBrushConverter"/>
@@ -98,38 +98,78 @@
         </Viewbox>
 
         <!-- Control Panel -->
-        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10" Width="200">
+        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10" Width="300">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock Text="{Binding InvalidMoveMessage}" 
            FontSize="20" FontWeight="Bold" Foreground="Yellow"
            Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
 
-                <!-- Turn Indicator -->
-                <StackPanel Orientation="Vertical" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,0,0,10" Width="120">
-                    <RadioButton Content="White"
-                        IsChecked="{Binding IsWhiteTurn, Mode=OneWay}"
-                        VerticalContentAlignment="Center"
-                        HorizontalContentAlignment="Center"
-                        GroupName="PlayerTurn"
-                        FontWeight="Bold"
-                        FontSize="20"                 
-                        Foreground="White"
-                        Margin="5"
-                        IsEnabled="False"
-                        HorizontalAlignment="Center"/>
-                    <RadioButton Content="Black"
-                         IsChecked="{Binding IsBlackTurn, Mode=OneWay}"
-                         GroupName="PlayerTurn"
-                         VerticalContentAlignment="Center"
-                         HorizontalContentAlignment="Center"
-                         FontWeight="Bold"
-                         FontSize="20"
-                         Foreground="Black"
-                         Background="White"
-                         Margin="5"
-                         IsEnabled="False"
-                         HorizontalAlignment="Center"/>
-                </StackPanel>
+                <!-- Turn Indicators and Move Logs aligned by column -->
+                <Grid Width="260" Height="530" Margin="0,5,0,5">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- White Turn Indicator -->
+                    <RadioButton Grid.Row="0" Grid.Column="0"
+                 Content="White"
+                 IsChecked="{Binding IsWhiteTurn, Mode=OneWay}"
+                 GroupName="PlayerTurn"
+                 FontWeight="Bold"
+                 FontSize="18"
+                 Foreground="White"
+                 IsEnabled="False"
+                 Background="Transparent"
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center"
+                 Padding="0, -5, 0,0"
+                 Margin="0,0,0,5"/>
+
+                    <!-- Black Turn Indicator -->
+                    <RadioButton Grid.Row="0" Grid.Column="1"
+                 Content="Black"
+                 IsChecked="{Binding IsBlackTurn, Mode=OneWay}"
+                 GroupName="PlayerTurn"
+                 FontWeight="Bold"
+                 FontSize="18"
+                 Foreground="Black"
+                 Background="White"
+                 IsEnabled="False"
+                 HorizontalAlignment="Center"
+                 HorizontalContentAlignment="Center"
+                 Padding="0, -5, 0,0"
+                 Margin="0,0,0,5"/>
+
+                    <!-- White Move Log -->
+                    <ListBox Grid.Row="1" Grid.Column="0"
+             ItemsSource="{Binding WhiteMoves}"
+             Background="Black"
+             Foreground="White"
+             BorderBrush="Gray"
+             BorderThickness="1"
+             FontFamily="Segoe UI"
+             FontSize="24"
+             Padding="5"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+
+                    <!-- Black Move Log -->
+                    <ListBox Grid.Row="1" Grid.Column="1"
+             ItemsSource="{Binding BlackMoves}"
+             Background="Black"
+             Foreground="White"
+             BorderBrush="Gray"
+             BorderThickness="1"
+             FontFamily="Segoe UI"
+             FontSize="24"
+             Padding="5"
+             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </Grid>
+
 
                 <!-- Reset Button -->
                 <Button Width="120" Height="45"
@@ -140,15 +180,15 @@
         HorizontalAlignment="Center"
         Opacity="0.9"/>
 
-
-                <!-- Move Log (Most recent at top) -->
-                <ListBox ItemsSource="{Binding MoveLog}"
-                         Width="180" Height="498" Margin="0,10,0,10"
-                         HorizontalAlignment="Center"
-                         Background="Black" Foreground="White"
-                         BorderBrush="Gray" BorderThickness="1"
-                         ScrollViewer.VerticalScrollBarVisibility="Auto"
-                         FontFamily="Segoe UI" FontSize="25" Padding="5"/>
+                <!-- Draw Claim Button -->
+                <Button Content="Claim Draw"
+        Width="150" Height="50" FontSize="20" Margin="0,10,0,10"
+        Command="{Binding ClaimDrawCommand}"
+        Visibility="{Binding IsDrawClaimVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+        Background="DarkOrange"
+        Foreground="White"
+        FontWeight="Bold"
+        HorizontalAlignment="Center"/>
 
                 <!-- Promotion Options -->
                 <StackPanel Orientation="Vertical"

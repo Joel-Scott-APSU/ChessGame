@@ -35,6 +35,7 @@ namespace ChessGame.Core
         private MainWindowViewModel viewModel;
         private ThreatMap threatMap => game.threatMap;
         private Board board => game.board;
+        public int counter { get; private set; }
 
         // === Constructor ===
         public GameRules(Game game, MainWindowViewModel viewModel)
@@ -42,6 +43,7 @@ namespace ChessGame.Core
             this.game = game;
             this.viewModel = viewModel;
             activePieces = new HashSet<Piece>();
+            counter = 0;
         }
 
         // === Initialization ===
@@ -68,7 +70,6 @@ namespace ChessGame.Core
 
             if (movingPiece == null || movingPiece.isWhite() != currentTurn.IsWhite)
             {
-                Debug.WriteLine("Test 1");
                 return new MoveResult
                 {
                     MoveSuccessful = false,
@@ -84,7 +85,6 @@ namespace ChessGame.Core
 
             if (threatMap.willMovePutKingInCheck(start, end, movingPiece.isWhite()))
             {
-                Debug.WriteLine("Test 2");
                 return new MoveResult
                 {
                     MoveSuccessful = false,
@@ -106,6 +106,12 @@ namespace ChessGame.Core
             if (movingPiece.legalMove(threatMap, start, end, board))
             {
                 capturedPiece = end.Piece;
+                if (movingPiece is Piece.Pawn)
+                    counter = 0;
+                else if(capturedPiece != null)
+                    counter = 0;
+                else
+                    counter++;
 
                 if (movingPiece is Piece.Pawn && enPassantCapture(movingPiece, toSquare, board, out Piece? enPassantCapturedPiece))
                 {
@@ -298,7 +304,12 @@ namespace ChessGame.Core
             bool checkmate = Checkmate(player);
             string annotation = checkmate ? "#" : (kingInCheck ? "+" : "");
             string moveNotation = $"{GetMoveNotation(movingPiece, fromSquare, toSquare, capturedPiece != null)}{annotation}";
-            viewModel.MoveLog.Insert(0, moveNotation);
+
+            if(game.currentTurn.IsWhite)
+                viewModel.WhiteMoves.Insert(0, moveNotation);
+            else
+                viewModel.BlackMoves.Insert(0, moveNotation);
+
             if (checkmate)
             {
                 viewModel.InvalidMoveMessage = "Checkmate";
@@ -321,7 +332,11 @@ namespace ChessGame.Core
             string annotation = checkmate ? "#" : (kingInCheck ? "+" : "");
             string promotedPiece = "=" + GetPieceNotationSymbol(promotedPieceType);
             string moveNotation = $"{GetMoveNotation(MovingPiece, fromSquare, toSquare, capturedPiece != null)}{promotedPiece}{annotation}";
-            viewModel.MoveLog.Insert(0, moveNotation);
+
+            if (game.currentTurn.IsWhite)
+                viewModel.WhiteMoves.Insert(0, moveNotation);
+            else
+                viewModel.BlackMoves.Insert(0, moveNotation);
         }
 
         public string GetPieceNotationSymbol(Piece piece) => piece?.type switch
