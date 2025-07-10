@@ -20,7 +20,13 @@
     <Grid HorizontalAlignment="Center" VerticalAlignment="Center">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto"/>
+            <!-- Chessboard -->
             <ColumnDefinition Width="Auto"/>
+            <!-- Control Panel (move logs, buttons) -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Extra controls if any (optional) -->
+            <ColumnDefinition Width="Auto"/>
+            <!-- Timer Buttons (NEW) -->
         </Grid.ColumnDefinitions>
 
         <!-- Chessboard Area -->
@@ -97,98 +103,142 @@
             </Grid>
         </Viewbox>
 
-        <!-- Control Panel -->
+        <!-- Control Panel: move logs, turn indicators, messages -->
         <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="10" Width="300">
             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                <TextBlock Text="{Binding InvalidMoveMessage}" 
-           FontSize="20" FontWeight="Bold" Foreground="Yellow"
-           Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
 
-                <!-- Turn Indicators and Move Logs aligned by column -->
+                <TextBlock Text="{Binding InvalidMoveMessage}" 
+                           FontSize="20" FontWeight="Bold" Foreground="Yellow"
+                           Margin="0,0,0,5" TextWrapping="Wrap" TextAlignment="Center"/>
+
                 <Grid Width="260" Height="530" Margin="0,5,0,5">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
+                        <!-- Player Clocks -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Turn Indicators -->
                         <RowDefinition Height="*"/>
+                        <!-- Move Logs -->
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
+                    <!-- White Clock with Border -->
+                    <Border Grid.Row="0" Grid.Column="0"
+                            BorderBrush="White"
+                            BorderThickness="2"
+                            CornerRadius="5"
+                            Padding="5"
+                            Margin="5"
+                            Background="#33000000"  
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Width="100"
+                            Height="40">
+                        <TextBlock Text="{Binding WhiteClock}"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+
+                    <!-- Black Clock with Border -->
+                    <Border Grid.Row="0" Grid.Column="1"
+                            BorderBrush="White"
+                            BorderThickness="2"
+                            CornerRadius="5"
+                            Padding="5"
+                            Margin="5"
+                            Background="#33000000"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Width="100"
+                            Height="40">
+                        <TextBlock Text="{Binding BlackClock}"
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="White"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+
                     <!-- White Turn Indicator -->
-                    <RadioButton Grid.Row="0" Grid.Column="0"
-                 Content="White"
-                 IsChecked="{Binding IsWhiteTurn, Mode=OneWay}"
-                 GroupName="PlayerTurn"
-                 FontWeight="Bold"
-                 FontSize="18"
-                 Foreground="White"
-                 IsEnabled="False"
-                 Background="Transparent"
-                 HorizontalAlignment="Center"
-                 HorizontalContentAlignment="Center"
-                 Padding="0, -5, 0,0"
-                 Margin="0,0,0,5"/>
+                    <RadioButton Grid.Row="1" Grid.Column="0"
+                                 Content="White"
+                                 IsChecked="{Binding IsWhiteTurn, Mode=OneWay}"
+                                 GroupName="PlayerTurn"
+                                 FontWeight="Bold"
+                                 FontSize="18"
+                                 Foreground="White"
+                                 IsEnabled="False"
+                                 Background="Transparent"
+                                 HorizontalAlignment="Center"
+                                 HorizontalContentAlignment="Center"
+                                 Padding="0,-5,0,0"
+                                 Margin="0,0,0,5"/>
 
                     <!-- Black Turn Indicator -->
-                    <RadioButton Grid.Row="0" Grid.Column="1"
-                 Content="Black"
-                 IsChecked="{Binding IsBlackTurn, Mode=OneWay}"
-                 GroupName="PlayerTurn"
-                 FontWeight="Bold"
-                 FontSize="18"
-                 Foreground="Black"
-                 Background="White"
-                 IsEnabled="False"
-                 HorizontalAlignment="Center"
-                 HorizontalContentAlignment="Center"
-                 Padding="0, -5, 0,0"
-                 Margin="0,0,0,5"/>
+                    <RadioButton Grid.Row="1" Grid.Column="1"
+                                 Content="Black"
+                                 IsChecked="{Binding IsBlackTurn, Mode=OneWay}"
+                                 GroupName="PlayerTurn"
+                                 FontWeight="Bold"
+                                 FontSize="18"
+                                 Foreground="Black"
+                                 Background="White"
+                                 IsEnabled="False"
+                                 HorizontalAlignment="Center"
+                                 HorizontalContentAlignment="Center"
+                                 Padding="0,-5,0,0"
+                                 Margin="0,0,0,5"/>
 
                     <!-- White Move Log -->
-                    <ListBox Grid.Row="1" Grid.Column="0"
-             ItemsSource="{Binding WhiteMoves}"
-             Background="Black"
-             Foreground="White"
-             BorderBrush="Gray"
-             BorderThickness="1"
-             FontFamily="Segoe UI"
-             FontSize="24"
-             Padding="5"
-             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    <ListBox Grid.Row="2" Grid.Column="0"
+                             ItemsSource="{Binding WhiteMoves}"
+                             Background="Black"
+                             Foreground="White"
+                             BorderBrush="Gray"
+                             BorderThickness="1"
+                             FontFamily="Segoe UI"
+                             FontSize="24"
+                             Padding="5"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
 
                     <!-- Black Move Log -->
-                    <ListBox Grid.Row="1" Grid.Column="1"
-             ItemsSource="{Binding BlackMoves}"
-             Background="Black"
-             Foreground="White"
-             BorderBrush="Gray"
-             BorderThickness="1"
-             FontFamily="Segoe UI"
-             FontSize="24"
-             Padding="5"
-             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    <ListBox Grid.Row="2" Grid.Column="1"
+                             ItemsSource="{Binding BlackMoves}"
+                             Background="Black"
+                             Foreground="White"
+                             BorderBrush="Gray"
+                             BorderThickness="1"
+                             FontFamily="Segoe UI"
+                             FontSize="24"
+                             Padding="5"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"/>
                 </Grid>
-
 
                 <!-- Reset Button -->
                 <Button Width="120" Height="45"
-        Content="Reset Game"
-        Click="ResetGame_Click"
-        Background="#DDDDDD"
-        FontWeight="Bold"
-        HorizontalAlignment="Center"
-        Opacity="0.9"/>
+                        Content="Reset Game"
+                        Click="ResetGame_Click"
+                        Background="#DDDDDD"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"
+                        Opacity="0.9"
+                        Margin="0,10,0,0"/>
 
                 <!-- Draw Claim Button -->
                 <Button Content="Claim Draw"
-        Width="150" Height="50" FontSize="20" Margin="0,10,0,10"
-        Command="{Binding ClaimDrawCommand}"
-        Visibility="{Binding IsDrawClaimVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
-        Background="DarkOrange"
-        Foreground="White"
-        FontWeight="Bold"
-        HorizontalAlignment="Center"/>
+                        Width="150" Height="50" FontSize="20" Margin="0,10,0,10"
+                        Command="{Binding ClaimDrawCommand}"
+                        Visibility="{Binding IsDrawClaimVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                        Background="DarkOrange"
+                        Foreground="White"
+                        FontWeight="Bold"
+                        HorizontalAlignment="Center"/>
 
                 <!-- Promotion Options -->
                 <StackPanel Orientation="Vertical"
@@ -207,8 +257,18 @@
                     <Button Content="Knight" Width="150" Height="50" FontSize="20" Margin="0,2"
                             Command="{Binding PromoteCommand}" CommandParameter="Knight"/>
                 </StackPanel>
-
             </StackPanel>
         </Border>
+
+        <StackPanel Grid.Column="3" Orientation="Vertical" HorizontalAlignment="Center" Margin="10,0,0,0" VerticalAlignment="Center"
+            Visibility="{Binding HasGameBegun, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=False}">
+            <Button Content="2 min" Width="120" Height="50" FontSize="16" Click="SetTimer_2Min_Click"/>
+            <Button Content="5 min" Width="120" Height="50" FontSize="16" Click="SetTimer_5Min_Click"/>
+            <Button Content="10 min" Width="120" Height="50" FontSize="16" Click="SetTimer_10Min_Click"/>
+            <Button Content="20 min" Width="120" Height="50" FontSize="16" Click="SetTimer_20Min_Click"/>
+            <Button Content="Indefinite" Width="120" Height="50" FontSize="16" Click="SetTimer_Indefinite_Click"/>
+        </StackPanel>
+
+
     </Grid>
 </Window>

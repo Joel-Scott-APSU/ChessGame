@@ -1,4 +1,5 @@
-﻿using Chess.Core;
+﻿using Chess.Commands;
+using Chess.Core;
 using ChessGame.Models;
 using ChessGame.Views;
 using System;
@@ -36,6 +37,7 @@ namespace ChessGame.Core
         private ThreatMap threatMap => game.threatMap;
         private Board board => game.board;
         public int counter { get; private set; }
+        public Dictionary<ChessPositionState, int> fenHistory { get; private set; } = new();
 
         // === Constructor ===
         public GameRules(Game game, MainWindowViewModel viewModel)
@@ -108,7 +110,7 @@ namespace ChessGame.Core
                 capturedPiece = end.Piece;
                 if (movingPiece is Piece.Pawn)
                     counter = 0;
-                else if(capturedPiece != null)
+                else if (capturedPiece != null)
                     counter = 0;
                 else
                     counter++;
@@ -126,6 +128,17 @@ namespace ChessGame.Core
                 start.Piece = null;
                 movingPiece.setCurrentPosition(end);
                 moveSuccessful = true;
+
+                var fenKey = GetCurrentPositionState();
+
+                if(fenHistory.ContainsKey(fenKey))
+                {
+                    fenHistory[fenKey]++;
+                }
+                else
+                {
+                    fenHistory[fenKey] = 1;
+                }
             }
             else if (movingPiece is Piece.King king && end.Piece is Piece.Rook)
             {
@@ -134,6 +147,17 @@ namespace ChessGame.Core
 
                 if ((toSquare.column == 7 && castledKingSide) || (toSquare.column == 0 && castledQueenSide))
                     moveSuccessful = true;
+
+                var fenKey = GetCurrentPositionState();
+
+                if (fenHistory.ContainsKey(fenKey))
+                {
+                    fenHistory[fenKey]++;
+                }
+                else
+                {
+                    fenHistory[fenKey] = 1;
+                }
             }
 
             return new MoveResult
@@ -249,7 +273,7 @@ namespace ChessGame.Core
             CapturePiece(pawn);
             board.CreatePieces(promotedPiece, promotionSpot.Row, promotionSpot.Column, currentPlayer);
             AddActivePiece(promotedPiece);
-            if(promotedPiece is Piece.Rook rook)
+            if (promotedPiece is Piece.Rook rook)
             {
                 rook.hasMoved = true;
             }
@@ -272,6 +296,11 @@ namespace ChessGame.Core
 
         public bool Draw()
         {
+            if(fenHistory.Any(kvp => kvp.Value >= 3))
+            {
+                return true;
+            }
+
             if (activePieces.Count == 4 && DrawKingBishopVKingBishop()) return true;
             if (activePieces.Count == 3 && (DrawKingBishopVKing() || DrawKingKnightVKing())) return true;
             return activePieces.Count == 2;
@@ -305,7 +334,7 @@ namespace ChessGame.Core
             string annotation = checkmate ? "#" : (kingInCheck ? "+" : "");
             string moveNotation = $"{GetMoveNotation(movingPiece, fromSquare, toSquare, capturedPiece != null)}{annotation}";
 
-            if(game.currentTurn.IsWhite)
+            if (!game.currentTurn.IsWhite)
                 viewModel.WhiteMoves.Insert(0, moveNotation);
             else
                 viewModel.BlackMoves.Insert(0, moveNotation);
@@ -333,7 +362,7 @@ namespace ChessGame.Core
             string promotedPiece = "=" + GetPieceNotationSymbol(promotedPieceType);
             string moveNotation = $"{GetMoveNotation(MovingPiece, fromSquare, toSquare, capturedPiece != null)}{promotedPiece}{annotation}";
 
-            if (game.currentTurn.IsWhite)
+            if (!game.currentTurn.IsWhite)
                 viewModel.WhiteMoves.Insert(0, moveNotation);
             else
                 viewModel.BlackMoves.Insert(0, moveNotation);
@@ -462,5 +491,133 @@ namespace ChessGame.Core
 
         private bool QueenCanReach(Piece piece, ChessBoardSquare toSquare) =>
             BishopCanReach(piece, toSquare) || RookCanReach(piece, toSquare);
+
+        public ChessPositionState GetCurrentPositionState()
+        {
+            string piecePlacement = GenerateFENPiecePlacementFromBoard();
+            string activeColor = game.currentTurn.IsWhite ? "w" : "b";
+            string castlingAvailability = GetCastlingAvailability();
+            string enPassantTargetSquare = GetEnPassantTargetSquare();
+
+            return new ChessPositionState(
+                piecePlacement,
+                activeColor,
+                castlingAvailability,
+                enPassantTargetSquare
+            );
+        }
+
+
+        private string GenerateFENPiecePlacementFromBoard()
+        {
+            var fen = new List<string>();
+
+
+            for (int i = 0; i < 8; i++)
+            {
+                int emptyCount = 0;
+                var fenRows = new System.Text.StringBuilder();
+
+                for (int j = 0; j < 8; j++)
+                {
+                    Piece piece = board.GetSpot(i, j).Piece;
+                    if (piece == null)
+                        emptyCount++;
+
+                    else
+                    {
+                        if ((emptyCount > 0))
+                        {
+                            fenRows.Append(emptyCount);
+                            emptyCount = 0;
+                        }
+                        char pieceChar = GetCharForFEN(piece);
+                        fenRows.Append(pieceChar);
+                    }
+                }
+                if (emptyCount > 0)
+                {
+                    fenRows.Append(emptyCount);
+                }
+                fen.Add(fenRows.ToString());
+            }
+
+            return string.Join("/", fen);
+        }
+
+        private char GetCharForFEN(Piece piece)
+        {
+            char c = piece.type switch
+            {
+                PieceType.King => 'k',
+                PieceType.Knight => 'n',
+                PieceType.Queen => 'q',
+                PieceType.Rook => 'r',
+                PieceType.Bishop => 'b',
+                PieceType.Pawn => 'p',
+                _ => '?'
+            };
+
+            return piece.isWhite() ? char.ToUpper(c): c;
+        }
+
+        private string GetCastlingAvailability()
+        {
+            string castling = "";
+
+            if (GetActivePieces(true).Any(p => p is Piece.King king && !king.hasMoved)
+                && GetActivePieces(true).Any(p => p is Piece.Rook rook && !rook.hasMoved && rook.getCurrentPosition().Column == 7))
+            {
+                castling += "K";
+            }
+            if (GetActivePieces(true).Any(p => p is Piece.King king && !king.hasMoved)
+                && GetActivePieces(true).Any(p => p is Piece.Rook rook && !rook.hasMoved && rook.getCurrentPosition().Column == 0))
+            {
+                castling += "Q";
+            }
+            if (GetActivePieces(false).Any(p => p is Piece.King king && !king.hasMoved)
+                && GetActivePieces(false).Any(p => p is Piece.Rook rook && !rook.hasMoved && rook.getCurrentPosition().Column == 7))
+            {
+                castling += "k";
+            }
+            if (GetActivePieces(false).Any(p => p is Piece.King king && !king.hasMoved)
+                && GetActivePieces(false).Any(p => p is Piece.Rook rook && !rook.hasMoved && rook.getCurrentPosition().Column == 0))
+            {
+                castling += "q";
+            }
+
+            return castling;
+        }
+
+        private string GetEnPassantTargetSquare()
+        {
+            foreach(var pawn in GetActivePieces(game.currentTurn.IsWhite)
+                .Where(p => p is Piece.Pawn { isEnPassant: true }))
+            {
+                Debug.WriteLine("Test 1");
+                Spot spot = pawn.getCurrentPosition();
+                int row = spot.Row;
+                int column = spot.Column;
+
+                int targetSquare = pawn.isWhite() ? row + 1 : row - 1;
+
+                return ToAlgebraic(targetSquare, column);
+            }
+
+            return "-";
+        }
+
+        public void PrintFEN()
+        {
+            ChessPositionState state = GetCurrentPositionState();
+
+            string fen = $"{state.BoardFEN} " +
+                         $"{state.ActiveColor} " +
+                         $"{(string.IsNullOrEmpty(state.CastlingAvailability) ? "-" : state.CastlingAvailability)} " +
+                         $"{state.EnPassantTargetSquare} ";
+
+            Debug.WriteLine("FEN: " + fen);
+        }
+
     }
 }

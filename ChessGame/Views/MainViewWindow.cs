@@ -13,6 +13,7 @@ using System.Windows.Shapes;
 using Chess.Core;
 using ChessGame.Commands;
 using ChessGame.Core;
+using System.Timers;
 using ChessGame.Models;
 using static ChessGame.Models.Piece;
 
@@ -43,6 +44,28 @@ namespace ChessGame.Views
             }
         }
 
+        public bool _hasGameBegun;
+        public bool HasGameBegun
+        {
+            get => _hasGameBegun;
+            set
+            {
+                _hasGameBegun = value;
+                OnPropertyChanged(nameof(HasGameBegun));
+            }
+        }
+
+        public bool _isGameOver;
+        public bool IsGameOver
+        {
+            get => _isGameOver;
+            set
+            {
+                _isGameOver = value;
+                OnPropertyChanged(nameof(IsGameOver));
+            }
+        }
+
         private string _invalidMoveMessage;
         public string InvalidMoveMessage
         {
@@ -53,7 +76,27 @@ namespace ChessGame.Views
                 OnPropertyChanged(nameof(InvalidMoveMessage));
             }
         }
+        private string _whiteClock;
+        public string WhiteClock
+        {
+            get => _whiteClock;
+            set
+            {
+                _whiteClock = value;
+                OnPropertyChanged(nameof(WhiteClock));
+            }
+        }
 
+        private string _blackClock;
+        public string BlackClock
+        {
+            get => _blackClock;
+            set
+            {
+                _blackClock = value;
+                OnPropertyChanged(nameof(BlackClock));
+            }
+        }
         public Brush CurrentTurnColor
         {
             get => _currentTurnColor;
@@ -110,7 +153,6 @@ namespace ChessGame.Views
         // === Private Fields ===
         private Game game;
         private bool _IsAwaitingPromotion = false;
-        private bool _IsGameOver = false;
         private ChessBoardSquare selectedSquare;
         private Brush _currentTurnColor;
         private bool _isPromotionVisible;
@@ -130,21 +172,29 @@ namespace ChessGame.Views
 
             PromoteCommand = new RelayCommand(param => HandlePromotion(param));
             ClaimDrawCommand = new RelayCommand(_ => HandleClaimDraw());
+            HasGameBegun = false;
+            IsGameOver = false;
         }
 
         // === Core UI Logic ===
         public async Task OnSquareSelectedAsync(ChessBoardSquare square)
         {
-            if (_IsAwaitingPromotion)
+            if (!HasGameBegun)
+            {
+                InvalidMoveMessage = "Select a time to begin the game";
+                return;
+            }
+            else if (_IsAwaitingPromotion)
             {
                 InvalidMoveMessage = "Promote Your Pawn.";
                 return;
             }
-            else if (_IsGameOver)
+            else if (IsGameOver)
             {
 
                 return;
             }
+
 
             if (selectedSquare == null)
             {
@@ -193,7 +243,7 @@ namespace ChessGame.Views
                     else if (result.CastledKingSide)
                     {
                         MovePiecesCastleKingside(selectedSquare, square);
-                        if(game.currentTurn.IsWhite)
+                        if(!game.currentTurn.IsWhite)
                             WhiteMoves.Insert(0, "O-O");
                         else
                             BlackMoves.Insert(0, "O-O");
@@ -201,7 +251,7 @@ namespace ChessGame.Views
                     else if (result.CastledQueenSide)
                     {
                         MovePiecesCastleQueenside(selectedSquare, square);
-                        if (game.currentTurn.IsWhite)
+                        if (!game.currentTurn.IsWhite)
                             WhiteMoves.Insert(0, "O-O-O");
                         else
                             BlackMoves.Insert(0, "O-O-O");
@@ -213,7 +263,6 @@ namespace ChessGame.Views
 
 
                     OnPropertyChanged(nameof(CurrentTurnText));
-                    game.gameRules.WriteMoveOutput(result.movingPiece, game.currentTurn, result.fromSquare, result.toSquare, result.capturedPiece);
                     if(game.gameRules.counter >= 100)
                     {
                         IsDrawClaimVisible = true;
@@ -222,12 +271,13 @@ namespace ChessGame.Views
                     {
                         IsDrawClaimVisible = false;
                     }
-                
+
                     game.gameRules.swapTurn();
+                    game.gameRules.WriteMoveOutput(result.movingPiece, game.currentTurn, result.fromSquare, result.toSquare, result.capturedPiece);
 
                     if (game.EndGame())
                     {
-                        _IsGameOver = true;
+                        IsGameOver = true;
                     }
 
                     }
@@ -449,7 +499,7 @@ namespace ChessGame.Views
 
         public void HandleClaimDraw()
         {
-            _IsGameOver = true;
+            IsGameOver = true;
             InvalidMoveMessage = "Draw claimed by player.";
 
         }
