@@ -1,5 +1,5 @@
 ﻿using Chess.Commands;
-using Chess.Core;
+using Chess.Helpers;
 using ChessGame.Models;
 using ChessGame.Views;
 using System;

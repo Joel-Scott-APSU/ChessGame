@@ -1,4 +1,4 @@
-﻿using Chess.Core;
+﻿using Chess.Helpers;
 using ChessGame.Core;
 using ChessGame.Models;
 using ChessGame.Views;

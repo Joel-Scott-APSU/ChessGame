@@ -10,12 +10,12 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using Chess.Core;
 using ChessGame.Commands;
 using ChessGame.Core;
 using System.Timers;
 using ChessGame.Models;
 using static ChessGame.Models.Piece;
+using Chess.Helpers;
 
 namespace ChessGame.Views
 {

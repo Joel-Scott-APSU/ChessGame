@@ -54,7 +54,7 @@ namespace ChessGame
         public void SetTimer_2Min_Click(object sender, EventArgs e)
         {
             isTimerIndefinite = false;
-            WhiteTimerDuration = TimeSpan.FromMinutes(2);
+            WhiteTimerDuration = TimeSpan.FromSeconds(30);
             BlackTimerDuration = TimeSpan.FromMinutes(2);
             InitializeTimers();
             viewModel.HasGameBegun = true; // Ensure the game begins when a timer is set
